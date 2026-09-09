@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="A focused five-minute CritiCall-style typing practice simulator with 100 formal letters.">
+  <title>CritiCall Typing Practice</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<div class="app">
+  <div class="topbar">
+    <div>
+      <h1>CritiCall Typing Practice</h1>
+      <div class="status" id="status">Choose Start Test when ready.</div>
+    </div>
+    <div class="controls">
+      <span class="timer" id="timer">05:00</span>
+      <button id="newLetter">New Letter</button>
+      <button class="primary" id="start">Start Test</button>
+    </div>
+  </div>
+
+  <div class="test-grid">
+    <section class="panel">
+      <div class="panel-header">Source Letter</div>
+      <div class="letter" id="sourceLetter"></div>
+    </section>
+
+    <section class="panel">
+      <div class="panel-header">Transcription</div>
+      <textarea id="entry" disabled autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" aria-label="Transcription input"></textarea>
+    </section>
+  </div>
+
+  <section class="results" id="results">
+    <div class="result-grid">
+      <div class="metric"><div class="label">Gross WPM</div><div class="value" id="grossWpm">0</div></div>
+      <div class="metric"><div class="label">Accuracy</div><div class="value" id="accuracy">0%</div></div>
+      <div class="metric"><div class="label">Characters Typed</div><div class="value" id="charsTyped">0</div></div>
+      <div class="metric"><div class="label">Result</div><div class="value" id="passFail">—</div></div>
+    </div>
+    <div class="note">
+      Practice threshold: 40 WPM and 95% accuracy. No speed or accuracy feedback is shown while the test is running. The source letter follows your typing progress automatically. Accuracy is calculated using edit distance against the corresponding source text. Incidental trailing spaces at the ends of lines or paragraphs are ignored, while meaningful spaces, punctuation, capitalization, omissions, insertions, substitutions, and paragraph structure still matter.
+    </div>
+  </section>
+</div>
+
+<script src="letters.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
