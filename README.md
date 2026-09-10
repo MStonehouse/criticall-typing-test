@@ -50,3 +50,10 @@ The site uses only relative paths, so it works on both a user/organization Pages
 Gross WPM uses the conventional five-characters-per-word calculation over the five-minute test. Newline characters are excluded from WPM credit. Accuracy uses character-level edit distance against the corresponding source text. Trailing spaces at line or paragraph ends are ignored; meaningful spaces, punctuation, capitalization, omissions, insertions, substitutions, and paragraph structure still affect accuracy.
 
 This is an independent practice simulator, not official CritiCall software. An employer's CritiCall configuration may use a different scoring method.
+
+
+## Training records
+
+- `TRAINING_STATE.md` — current strengths, priorities, preferences, and study state
+- `TRAINING_LOG.md` — chronological benchmark scores and notable practice results
+- `CRITICALL_RULES.md` — stable practice rules and the Decision Making classification key
