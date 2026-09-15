@@ -1,179 +1,19 @@
-const TEST_SECONDS = 300;
-
-const sourceEl = document.getElementById('sourceLetter');
-const entryEl = document.getElementById('entry');
-const timerEl = document.getElementById('timer');
-const startBtn = document.getElementById('start');
-const newBtn = document.getElementById('newLetter');
-const statusEl = document.getElementById('status');
-const resultsEl = document.getElementById('results');
-const grossWpmEl = document.getElementById('grossWpm');
-const accuracyEl = document.getElementById('accuracy');
-const charsTypedEl = document.getElementById('charsTyped');
-const passFailEl = document.getElementById('passFail');
-
-let currentLetterIndex = -1;
-let letterDeck = [];
-
-function refillLetterDeck() {
-  letterDeck = Array.from({ length: LETTERS.length }, (_, i) => i);
-  for (let i = letterDeck.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [letterDeck[i], letterDeck[j]] = [letterDeck[j], letterDeck[i]];
-  }
-  if (letterDeck.length > 1 && letterDeck[letterDeck.length - 1] === currentLetterIndex) {
-    [letterDeck[0], letterDeck[letterDeck.length - 1]] = [letterDeck[letterDeck.length - 1], letterDeck[0]];
-  }
-}
-let remaining = TEST_SECONDS;
-let interval = null;
-let running = false;
-let startedAt = null;
-
-
-
-function normalizeForScoring(text) {
-  // Ignore incidental trailing spaces/tabs at line or paragraph ends,
-  // while preserving meaningful spaces, punctuation, capitalization,
-  // and paragraph structure.
-  return text
-    .replace(/[ \t]+(?=\n)/g, '')
-    .replace(/[ \t]+$/g, '');
-}
-
-function syncSourceToTypingProgress() {
-  if (!running) return;
-  const source = LETTERS[currentLetterIndex] || '';
-  const typed = entryEl.value || '';
-  if (!source.length) return;
-
-  // Track progress mainly by how far through the source the user has typed.
-  // Use normalized text so incidental trailing spaces do not affect scrolling.
-  const typedNorm = normalizeForScoring(typed);
-  const progress = Math.max(0, Math.min(1, typedNorm.length / source.length));
-
-  const maxScroll = Math.max(0, sourceEl.scrollHeight - sourceEl.clientHeight);
-
-  // Keep the active region slightly above center so upcoming text stays visible.
-  const target = Math.max(0, Math.min(maxScroll, maxScroll * progress - sourceEl.clientHeight * 0.18));
-  sourceEl.scrollTo({ top: target, behavior: 'smooth' });
-}
-
-function chooseLetter() {
-  if (running) return;
-  if (!letterDeck.length) refillLetterDeck();
-  currentLetterIndex = letterDeck.pop();
-  sourceEl.textContent = LETTERS[currentLetterIndex];
-  sourceEl.scrollTop = 0;
-  entryEl.value = '';
-  timerEl.textContent = '05:00';
-  statusEl.textContent = `Choose Start Test when ready. ${LETTERS.length} letters available.`;
-  resultsEl.classList.remove('show');
-}
-
-function formatTime(total) {
-  const m = Math.floor(total / 60);
-  const s = total % 60;
-  return String(m).padStart(2, '0') + ':' + String(s).padStart(2, '0');
-}
-
-function levenshtein(a, b) {
-  const n = a.length, m = b.length;
-  if (n === 0) return m;
-  if (m === 0) return n;
-  let prev = new Uint32Array(m + 1);
-  let curr = new Uint32Array(m + 1);
-  for (let j = 0; j <= m; j++) prev[j] = j;
-  for (let i = 1; i <= n; i++) {
-    curr[0] = i;
-    const ca = a.charCodeAt(i - 1);
-    for (let j = 1; j <= m; j++) {
-      const cost = ca === b.charCodeAt(j - 1) ? 0 : 1;
-      curr[j] = Math.min(
-        curr[j - 1] + 1,
-        prev[j] + 1,
-        prev[j - 1] + cost
-      );
-    }
-    [prev, curr] = [curr, prev];
-  }
-  return prev[m];
-}
-
-function endTest() {
-  if (!running) return;
-  running = false;
-  clearInterval(interval);
-  interval = null;
-  remaining = 0;
-  timerEl.textContent = '00:00';
-  entryEl.disabled = true;
-  startBtn.disabled = false;
-  newBtn.disabled = false;
-
-  const typedRaw = entryEl.value;
-  const sourceRaw = LETTERS[currentLetterIndex];
-
-  const typed = normalizeForScoring(typedRaw);
-  const source = normalizeForScoring(sourceRaw);
-
-  // Compare against a source window matching the amount attempted.
-  // A small buffer allows insertions/deletions to align properly.
-  const windowLen = Math.min(source.length, typed.length + 30);
-  const expected = source.slice(0, windowLen);
-  const distance = levenshtein(typed, expected);
-  const correctLike = Math.max(0, typed.length - distance);
-  const accuracy = typed.length === 0 ? 0 : Math.max(0, Math.min(100, (correctLike / typed.length) * 100));
-
-  const elapsedMinutes = TEST_SECONDS / 60;
-  // Newline characters are excluded from WPM credit, but normal spaces and punctuation count.
-  const wpmChars = typed.replace(/\n/g, '').length;
-  const grossWpm = (wpmChars / 5) / elapsedMinutes;
-
-  grossWpmEl.textContent = grossWpm.toFixed(1);
-  accuracyEl.textContent = accuracy.toFixed(1) + '%';
-  charsTypedEl.textContent = typedRaw.length;
-
-  const passed = grossWpm >= 40 && accuracy >= 95;
-  passFailEl.textContent = passed ? 'PASS' : 'NOT YET';
-  passFailEl.className = 'value ' + (passed ? 'pass' : 'fail');
-
-  statusEl.textContent = 'Time expired. Test complete.';
-  resultsEl.classList.add('show');
-}
-
-function startTest() {
-  if (running) return;
-  running = true;
-  remaining = TEST_SECONDS;
-  startedAt = Date.now();
-  entryEl.value = '';
-  entryEl.disabled = false;
-  entryEl.focus();
-  startBtn.disabled = true;
-  newBtn.disabled = true;
-  resultsEl.classList.remove('show');
-  statusEl.textContent = 'Test in progress.';
-  timerEl.textContent = formatTime(remaining);
-
-  interval = setInterval(() => {
-    const elapsed = Math.floor((Date.now() - startedAt) / 1000);
-    remaining = Math.max(0, TEST_SECONDS - elapsed);
-    timerEl.textContent = formatTime(remaining);
-    if (remaining <= 0) endTest();
-  }, 250);
-}
-
-
-entryEl.addEventListener('input', syncSourceToTypingProgress);
-
-entryEl.addEventListener('paste', (e) => e.preventDefault());
-entryEl.addEventListener('drop', (e) => e.preventDefault());
-entryEl.addEventListener('beforeinput', (e) => {
-  if (!running) e.preventDefault();
-});
-
-startBtn.addEventListener('click', startTest);
-newBtn.addEventListener('click', chooseLetter);
-
-chooseLetter();
+const FORMAL_SECONDS = 300;
+const TRAINER_DURATIONS = [120, 180, 240, 300];
+const sourceEl=document.getElementById('sourceLetter'),entryEl=document.getElementById('entry'),timerEl=document.getElementById('timer'),startBtn=document.getElementById('start'),newBtn=document.getElementById('newLetter'),statusEl=document.getElementById('status'),resultsEl=document.getElementById('results');
+const grossWpmEl=document.getElementById('grossWpm'),accuracyEl=document.getElementById('accuracy'),charsTypedEl=document.getElementById('charsTyped'),passFailEl=document.getElementById('passFail'),runLengthEl=document.getElementById('runLength'),correctCharsEl=document.getElementById('correctChars'),errorsEl=document.getElementById('errors'),marginEl=document.getElementById('margin'),resultNoteEl=document.getElementById('resultNote');
+const formalModeBtn=document.getElementById('formalMode'),trainerModeBtn=document.getElementById('trainerMode'),trainerStrip=document.getElementById('trainerStrip'),categoryBadge=document.getElementById('categoryBadge'),sourceHeader=document.getElementById('sourceHeader');
+let mode='formal', currentIndex=-1, deck=[], remaining=FORMAL_SECONDS, runSeconds=FORMAL_SECONDS, interval=null,running=false,startedAt=null;
+function pool(){return mode==='formal'?LETTERS:TRAINER_PASSAGES;}
+function refillDeck(){const p=pool();deck=Array.from({length:p.length},(_,i)=>i);for(let i=deck.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[deck[i],deck[j]]=[deck[j],deck[i]];}if(deck.length>1&&deck[deck.length-1]===currentIndex)[deck[0],deck[deck.length-1]]=[deck[deck.length-1],deck[0]];}
+function currentText(){const x=pool()[currentIndex];return mode==='formal'?x:(x?.text||'');}
+function normalizeForScoring(t){return t.replace(/[ \t]+(?=\n)/g,'').replace(/[ \t]+$/g,'');}
+function syncSourceToTypingProgress(){if(!running)return;const s=currentText(),t=normalizeForScoring(entryEl.value);if(!s.length)return;const progress=Math.max(0,Math.min(1,t.length/s.length)),max=Math.max(0,sourceEl.scrollHeight-sourceEl.clientHeight),target=Math.max(0,Math.min(max,max*progress-sourceEl.clientHeight*.18));sourceEl.scrollTo({top:target,behavior:'smooth'});}
+function formatTime(total){return String(Math.floor(total/60)).padStart(2,'0')+':'+String(total%60).padStart(2,'0');}
+function choosePassage(){if(running)return;if(!deck.length)refillDeck();currentIndex=deck.pop();sourceEl.textContent=currentText();sourceEl.scrollTop=0;entryEl.value='';resultsEl.classList.remove('show');if(mode==='formal'){runSeconds=FORMAL_SECONDS;timerEl.textContent='05:00';timerEl.classList.remove('hidden');statusEl.textContent=`Choose Start when ready. ${LETTERS.length} formal letters available.`;}else{runSeconds=TRAINER_DURATIONS[Math.floor(Math.random()*TRAINER_DURATIONS.length)];timerEl.textContent='TIME HIDDEN';timerEl.classList.add('hidden');categoryBadge.textContent=TRAINER_PASSAGES[currentIndex].category;statusEl.textContent=`Choose Start when ready. ${TRAINER_PASSAGES.length} trainer passages available.`;}}
+function levenshtein(a,b){const n=a.length,m=b.length;if(!n)return m;if(!m)return n;let prev=new Uint32Array(m+1),curr=new Uint32Array(m+1);for(let j=0;j<=m;j++)prev[j]=j;for(let i=1;i<=n;i++){curr[0]=i;const ca=a.charCodeAt(i-1);for(let j=1;j<=m;j++){const cost=ca===b.charCodeAt(j-1)?0:1;curr[j]=Math.min(curr[j-1]+1,prev[j]+1,prev[j-1]+cost);}[prev,curr]=[curr,prev];}return prev[m];}
+function endTest(){if(!running)return;running=false;clearInterval(interval);interval=null;entryEl.disabled=true;startBtn.disabled=false;newBtn.disabled=false;formalModeBtn.disabled=false;trainerModeBtn.disabled=false;const typedRaw=entryEl.value,typed=normalizeForScoring(typedRaw),source=normalizeForScoring(currentText()),windowLen=Math.min(source.length,typed.length+30),expected=source.slice(0,windowLen),distance=levenshtein(typed,expected),correctLike=Math.max(0,typed.length-distance),accuracy=typed.length?Math.max(0,Math.min(100,correctLike/typed.length*100)):0,elapsedMinutes=runSeconds/60,wpmChars=typed.replace(/\n/g,'').length,grossWpm=(wpmChars/5)/elapsedMinutes,passed=grossWpm>=40&&accuracy>=95;
+ grossWpmEl.textContent=grossWpm.toFixed(1);accuracyEl.textContent=accuracy.toFixed(1)+'%';charsTypedEl.textContent=typedRaw.length;runLengthEl.textContent=(runSeconds/60)+' min';correctCharsEl.textContent=correctLike;errorsEl.textContent=distance;marginEl.textContent=(grossWpm-40>=0?'+':'')+(grossWpm-40).toFixed(1)+' WPM';passFailEl.textContent=passed?'PASS':'NOT YET';passFailEl.className='value '+(passed?'pass':'fail');statusEl.textContent=mode==='trainer'?'Run complete. Nice work—take a moment, then go again when ready.':'Time expired. Test complete.';resultNoteEl.textContent=mode==='trainer'?`Trainer category: ${TRAINER_PASSAGES[currentIndex].category}. The timer stayed hidden for the entire run. Practice threshold shown only as a reference: 40 WPM and 95% accuracy.`:'Formal benchmark: five minutes, 40 WPM / 95% practice threshold. No speed or accuracy feedback was shown while the test was running.';timerEl.textContent=formatTime(0);timerEl.classList.remove('hidden');resultsEl.classList.add('show');}
+function startTest(){if(running)return;running=true;remaining=runSeconds;startedAt=Date.now();entryEl.value='';entryEl.disabled=false;entryEl.focus();startBtn.disabled=true;newBtn.disabled=true;formalModeBtn.disabled=true;trainerModeBtn.disabled=true;resultsEl.classList.remove('show');statusEl.textContent=mode==='trainer'?'Trainer run in progress. Forget the clock and keep moving.':'Formal test in progress.';if(mode==='trainer'){timerEl.textContent='TIME HIDDEN';timerEl.classList.add('hidden');}else timerEl.textContent=formatTime(remaining);interval=setInterval(()=>{const elapsed=Math.floor((Date.now()-startedAt)/1000);remaining=Math.max(0,runSeconds-elapsed);if(mode==='formal')timerEl.textContent=formatTime(remaining);if(remaining<=0)endTest();},250);}
+function setMode(next){if(running||mode===next)return;mode=next;currentIndex=-1;deck=[];formalModeBtn.classList.toggle('active',mode==='formal');trainerModeBtn.classList.toggle('active',mode==='trainer');trainerStrip.classList.toggle('show',mode==='trainer');sourceHeader.textContent=mode==='formal'?'Source Letter':'Practice Passage';choosePassage();}
+entryEl.addEventListener('input',syncSourceToTypingProgress);entryEl.addEventListener('paste',e=>e.preventDefault());entryEl.addEventListener('drop',e=>e.preventDefault());entryEl.addEventListener('beforeinput',e=>{if(!running)e.preventDefault();});startBtn.addEventListener('click',startTest);newBtn.addEventListener('click',choosePassage);formalModeBtn.addEventListener('click',()=>setMode('formal'));trainerModeBtn.addEventListener('click',()=>setMode('trainer'));choosePassage();

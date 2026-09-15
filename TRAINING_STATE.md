@@ -63,3 +63,11 @@ Emphasize:
 LOCATION → SERVICE → WHAT → DANGER → INJURIES → WEAPONS → SUSPECT → UPDATES
 
 Keep observed facts separate from caller assumptions. Preserve uncertainty and conflicting information rather than resolving it without evidence.
+
+
+## Typing Trainer build — 2026-09-15
+- Existing formal five-minute simulator preserved as the benchmark mode.
+- Added separate informal Typing Trainer using the same visual/interaction style.
+- Trainer contains 360 passages across 9 categories and randomly selects 2, 3, 4, or 5 minute runs.
+- Timer remains hidden throughout trainer runs; full statistics appear afterward.
+- Purpose: high-volume format familiarization, reduced test anxiety, broader transcription exposure, and supplementary skill development during the final two weeks before the CritiCall exam.

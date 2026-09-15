@@ -1,10 +1,15 @@
 # CritiCall Typing Practice
 
-A dependency-free, static five-minute transcription practice app designed for CritiCall-style keyboarding preparation.
+A dependency-free CritiCall-style typing simulator plus a high-volume, informal transcription trainer.
 
 ## Features
 
-- 100 built-in formal practice letters
+- 100 built-in formal practice letters (preserved as the benchmark simulator)
+- 360 additional trainer passages across 9 categories
+- Random 2, 3, 4, or 5 minute trainer runs
+- Trainer timer is completely hidden while typing
+- Trainer categories: Easy Flow, Formal, Dispatch Narrative, Numbers & Dates, Names & Addresses, Punctuation, Awkward Words, Email & Memo, and Mixed
+- Expanded post-run trainer statistics
 - 5-minute timed tests
 - 40 WPM / 95% practice threshold
 - No live WPM or accuracy feedback during a run
@@ -41,7 +46,8 @@ The site uses only relative paths, so it works on both a user/organization Pages
 - `index.html` — page markup
 - `styles.css` — presentation
 - `app.js` — timer, scrolling, input controls, and scoring
-- `letters.js` — 100-letter practice library
+- `letters.js` — 100-letter formal benchmark library
+- `trainer-passages.js` — 360-passage high-volume trainer library
 - `.github/workflows/pages.yml` — GitHub Pages deployment
 - `.nojekyll` — tells GitHub Pages to serve the static files directly
 
