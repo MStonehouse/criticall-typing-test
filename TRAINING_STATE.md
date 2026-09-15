@@ -71,3 +71,11 @@ Keep observed facts separate from caller assumptions. Preserve uncertainty and c
 - Trainer contains 360 passages across 9 categories and randomly selects 2, 3, 4, or 5 minute runs.
 - Timer remains hidden throughout trainer runs; full statistics appear afterward.
 - Purpose: high-volume format familiarization, reduced test anxiety, broader transcription exposure, and supplementary skill development during the final two weeks before the CritiCall exam.
+
+## 2026-09-15 — Long unique passage rebuild
+- Rebuilt all 100 Formal Test letters and all 500 Trainer passages.
+- Exact duplicate full passages: 0.
+- Exact duplicate substantive paragraphs: 0.
+- Passage word-count range: 459–612 words; average 499 words.
+- All trainer passages are written to survive the maximum five-minute trainer duration; Formal Test remains fixed at five minutes.
+- Trainer categories remain: Easy Flow, Formal Correspondence, Dispatch Narrative, Numbers & Dates, Names & Addresses, Punctuation, Awkward Words, Email & Memo, Mixed Practice.

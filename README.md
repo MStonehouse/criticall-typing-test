@@ -5,7 +5,7 @@ A dependency-free CritiCall-style typing simulator plus a high-volume, informal 
 ## Features
 
 - 100 built-in formal practice letters (preserved as the benchmark simulator)
-- 360 additional trainer passages across 9 categories
+- 500 long, unique trainer passages across 9 categories
 - Random 2, 3, 4, or 5 minute trainer runs
 - Trainer timer is completely hidden while typing
 - Trainer categories: Easy Flow, Formal, Dispatch Narrative, Numbers & Dates, Names & Addresses, Punctuation, Awkward Words, Email & Memo, and Mixed
@@ -47,7 +47,7 @@ The site uses only relative paths, so it works on both a user/organization Pages
 - `styles.css` — presentation
 - `app.js` — timer, scrolling, input controls, and scoring
 - `letters.js` — 100-letter formal benchmark library
-- `trainer-passages.js` — 360-passage high-volume trainer library
+- `trainer-passages.js` — 500 long, unique high-volume trainer passages
 - `.github/workflows/pages.yml` — GitHub Pages deployment
 - `.nojekyll` — tells GitHub Pages to serve the static files directly
 
@@ -63,3 +63,10 @@ This is an independent practice simulator, not official CritiCall software. An e
 - `TRAINING_STATE.md` — current strengths, priorities, preferences, and study state
 - `TRAINING_LOG.md` — chronological benchmark scores and notable practice results
 - `CRITICALL_RULES.md` — stable practice rules and the Decision Making classification key
+
+## Long-passage rebuild (2026-09-15)
+
+- Formal mode: 100 unique letters, each intentionally longer than a normal five-minute attempt.
+- Trainer mode: 500 unique passages across nine categories; every passage is sized for a full five-minute run even when a shorter 2–4 minute trainer duration is selected.
+- Generation validation rejects duplicate full passages and duplicate substantive paragraphs.
+- Current library word-count range is recorded in `TRAINING_STATE.md`.
