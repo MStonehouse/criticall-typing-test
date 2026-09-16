@@ -79,3 +79,7 @@ Keep observed facts separate from caller assumptions. Preserve uncertainty and c
 - Passage word-count range: 459–612 words; average 499 words.
 - All trainer passages are written to survive the maximum five-minute trainer duration; Formal Test remains fixed at five minutes.
 - Trainer categories remain: Easy Flow, Formal Correspondence, Dispatch Narrative, Numbers & Dates, Names & Addresses, Punctuation, Awkward Words, Email & Memo, Mixed Practice.
+
+
+## Trainer corpus refresh — 2026-09-16
+Trainer passages were rebuilt as 500 long, unique, predominantly plain-English samples. Each begins with one short addressee/address line, then shifts into natural prose or lightly operational narrative. Formal Test letters were intentionally left unchanged. All trainer passages exceed 470 words so a five-minute run cannot exhaust the source at expected practice speeds.
