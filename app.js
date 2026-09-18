@@ -193,6 +193,7 @@ function showResults() {
 
 function endTest(reason = 'time') {
   if (!running) return;
+  clearHeaderIdleTimer();
   running = false;
   if (interval) clearInterval(interval);
   interval = null;
@@ -215,6 +216,7 @@ function endTest(reason = 'time') {
 
 function startTest() {
   if (running || !currentText()) return;
+  clearHeaderIdleTimer();
   running = true;
   startedAt = Date.now();
   remaining = runSeconds;
@@ -244,18 +246,46 @@ function startTest() {
   }, 250);
 }
 
+let headerIdleTimer = null;
+
+function clearHeaderIdleTimer() {
+  if (headerIdleTimer) {
+    clearTimeout(headerIdleTimer);
+    headerIdleTimer = null;
+  }
+}
+
 function headerInputCheck() {
   if (!running || mode !== 'header') return;
+  clearHeaderIdleTimer();
   const typed = normalizeForScoring(entryEl.value);
   const source = normalizeForScoring(currentText());
   if (!source.length) return;
   if (typed === source) { endTest('complete'); return; }
+
   // Allow the run to end once the entry is essentially complete, even with a
   // small misspelling or two, instead of requiring a character-perfect match.
   const tolerance = Math.max(2, Math.round(source.length * 0.08));
-  if (typed.length < source.length - tolerance) return;
+  const nearEnd = typed.length >= source.length - tolerance;
+  if (!nearEnd) return;
+
   const distance = levenshtein(typed, source);
-  if (distance <= tolerance || typed.length >= source.length + tolerance) endTest('complete');
+  if (distance <= tolerance || typed.length >= source.length + tolerance) {
+    endTest('complete');
+    return;
+  }
+
+  // The entry has reached the expected length but has more mistakes than the
+  // instant-match tolerance allows. Rather than wait forever for a cleaner
+  // match that will never come, treat a short pause here as "finished typing"
+  // so the run always ends on its own.
+  headerIdleTimer = setTimeout(() => {
+    headerIdleTimer = null;
+    if (!running || mode !== 'header') return;
+    if (normalizeForScoring(entryEl.value).length >= source.length - tolerance) {
+      endTest('complete');
+    }
+  }, 900);
 }
 
 function setMode(next) {
