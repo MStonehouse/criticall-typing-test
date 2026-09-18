@@ -89,3 +89,9 @@ Trainer passages were rebuilt as 500 long, unique, predominantly plain-English s
 - Fixed accuracy scoring so the previous `typed.length + 30` comparison window cannot manufacture errors for text not yet typed.
 - Final-text corrections via backspace are scored from the resulting text rather than the edit history.
 - Added a 2/3/4/5-minute Typing Trainer selector visible only in Trainer mode.
+
+## 2026-09-18 Header Practice
+
+- Added a separate Header Practice mode for Name / Address / City / Postal Code transcription.
+- Header drills are untimed and finish automatically when the complete text is entered.
+- Formal Test and Typing Trainer behaviour remains separate.

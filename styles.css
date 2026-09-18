@@ -167,3 +167,7 @@ textarea {
 
 .trainer-strip label{font-weight:700;color:var(--text)}
 .trainer-strip select{font:inherit;padding:5px 8px;border:1px solid var(--border);border-radius:6px;background:var(--panel);color:var(--text)}
+
+#headerMode.active{font-weight:700}
+#headerHint{display:flex}
+#headerHint.hidden{display:none}

@@ -80,3 +80,7 @@ Trainer passages were rebuilt as 500 long, unique, predominantly plain-English s
 - Typing Trainer run length is now user-selectable at 2, 3, 4, or 5 minutes. The selector appears only when Typing Trainer is selected, and the timer remains hidden during the run.
 - Accuracy is based on the final text left in the transcription box. Backspacing and correcting a mistake does not permanently count as an accuracy error.
 - Accuracy compares the final typed text against the corresponding source prefix; untyped text at the end is not treated as an accuracy error.
+
+## Header Practice
+
+Header Practice is a separate, untimed drill for transcribing structured contact headers containing a name, street address, city, and postal code. The run ends automatically when the complete header is entered, then displays the normal statistics. It uses a separate randomized header corpus and does not alter the Formal Test or Typing Trainer timing.
