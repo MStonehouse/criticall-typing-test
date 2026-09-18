@@ -47,6 +47,8 @@
 
 * { box-sizing: border-box; }
 
+html, body { height: 100%; }
+
 html { color-scheme: dark light; }
 
 body {
@@ -57,6 +59,7 @@ body {
     var(--bg);
   color: var(--text);
   -webkit-font-smoothing: antialiased;
+  overflow-y: auto;
 }
 
 :focus-visible {
@@ -68,7 +71,12 @@ body {
 .app {
   max-width: 1360px;
   margin: 0 auto;
-  padding: 22px 24px 40px;
+  padding: 22px 24px;
+  height: 100vh;
+  height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
 }
 
 /* ---------- Console header ---------- */
@@ -82,6 +90,7 @@ body {
   border-bottom: 1px solid var(--border-soft);
   margin-bottom: 18px;
   flex-wrap: wrap;
+  flex: 0 0 auto;
 }
 
 .console-id {
@@ -268,6 +277,7 @@ button:disabled {
   margin: -2px 0 16px;
   color: var(--muted);
   font-size: 0.85rem;
+  flex: 0 0 auto;
 }
 .trainer-strip.show { display: flex; }
 
@@ -287,7 +297,8 @@ button:disabled {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 16px;
-  min-height: 68vh;
+  flex: 1 1 auto;
+  min-height: 0;
 }
 
 .panel {
@@ -295,6 +306,7 @@ button:disabled {
   border: 1px solid var(--border);
   border-radius: 10px;
   min-width: 0;
+  min-height: 0;
   overflow: hidden;
   display: flex;
   flex-direction: column;
@@ -320,6 +332,7 @@ button:disabled {
   display: flex;
   align-items: center;
   justify-content: space-between;
+  flex: 0 0 auto;
 }
 
 .letter {
@@ -358,6 +371,9 @@ textarea::placeholder { color: var(--muted-dim); }
   border-radius: 10px;
   padding: 20px 22px;
   display: none;
+  flex: 0 1 auto;
+  overflow-y: auto;
+  max-height: 46vh;
 }
 .results.show { display: block; }
 
@@ -448,13 +464,13 @@ textarea::placeholder { color: var(--muted-dim); }
 }
 
 @media (max-width: 800px) {
-  .app { padding: 16px 14px 32px; }
+  .app { padding: 16px 14px; }
   .console { flex-direction: column; align-items: stretch; }
   .controls { width: 100%; }
   .mode-switch { order: 4; width: 100%; }
   .mode-switch button { flex: 1; }
-  .test-grid { grid-template-columns: 1fr; min-height: 0; }
-  .letter, textarea { height: 42vh; flex: none; padding: 18px 18px; }
+  .test-grid { grid-template-columns: 1fr; grid-template-rows: 1fr 1fr; }
+  .letter, textarea { padding: 18px; }
   .result-grid, .result-grid.secondary { grid-template-columns: repeat(2, 1fr); }
   .results-head { flex-direction: column; align-items: flex-start; }
 }
