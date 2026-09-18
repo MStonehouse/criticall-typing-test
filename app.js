@@ -310,7 +310,7 @@ COMOX, BC V9M K9V`
 
 function pool(){return mode==='formal'?LETTERS:mode==='header'?HEADER_PRACTICE:TRAINER_PASSAGES;}
 function refillDeck(){const p=pool();deck=Array.from({length:p.length},(_,i)=>i);for(let i=deck.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[deck[i],deck[j]]=[deck[j],deck[i]];}if(deck.length>1&&deck[deck.length-1]===currentIndex)[deck[0],deck[deck.length-1]]=[deck[deck.length-1],deck[0]];}
-function currentText(){return mode==='formal'?LETTERS[currentIndex].text:mode==='header'?HEADER_PRACTICE[currentIndex]:TRAINER_PASSAGES[currentIndex].text;}
+function currentText(){return mode==='formal'?LETTERS[currentIndex]:mode==='header'?HEADER_PRACTICE[currentIndex]:TRAINER_PASSAGES[currentIndex].text;}
 function normalizeForScoring(t){return t.replace(/[ \t]+(?=\n)/g,'').replace(/[ \t]+$/g,'');}
 function syncSourceToTypingProgress(){if(!running)return;const s=currentText(),t=normalizeForScoring(entryEl.value);if(!s.length)return;const progress=Math.max(0,Math.min(1,t.length/s.length)),max=Math.max(0,sourceEl.scrollHeight-sourceEl.clientHeight),target=Math.max(0,Math.min(max,max*progress-sourceEl.clientHeight*.18));sourceEl.scrollTo({top:target,behavior:'smooth'});}
 function formatTime(total){return String(Math.floor(total/60)).padStart(2,'0')+':'+String(total%60).padStart(2,'0');}
