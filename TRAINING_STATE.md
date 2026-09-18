@@ -83,3 +83,9 @@ Keep observed facts separate from caller assumptions. Preserve uncertainty and c
 
 ## Trainer corpus refresh — 2026-09-16
 Trainer passages were rebuilt as 500 long, unique, predominantly plain-English samples. Each begins with one short addressee/address line, then shifts into natural prose or lightly operational narrative. Formal Test letters were intentionally left unchanged. All trainer passages exceed 470 words so a five-minute run cannot exhaust the source at expected practice speeds.
+
+## 2026-09-18 Typing Trainer scoring and duration update
+
+- Fixed accuracy scoring so the previous `typed.length + 30` comparison window cannot manufacture errors for text not yet typed.
+- Final-text corrections via backspace are scored from the resulting text rather than the edit history.
+- Added a 2/3/4/5-minute Typing Trainer selector visible only in Trainer mode.
