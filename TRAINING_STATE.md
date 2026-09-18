@@ -95,3 +95,9 @@ Trainer passages were rebuilt as 500 long, unique, predominantly plain-English s
 - Added a separate Header Practice mode for Name / Address / City / Postal Code transcription.
 - Header drills are untimed and finish automatically when the complete text is entered.
 - Formal Test and Typing Trainer behaviour remains separate.
+
+
+Header Practice dataset expanded to 100 synthetic BC-style records for additional repetition variety.
+
+
+Header Practice dataset expanded to 100 synthetic BC-style records for additional repetition variety.
