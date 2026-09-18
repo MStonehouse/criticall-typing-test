@@ -246,7 +246,16 @@ function startTest() {
 
 function headerInputCheck() {
   if (!running || mode !== 'header') return;
-  if (normalizeForScoring(entryEl.value) === normalizeForScoring(currentText())) endTest('complete');
+  const typed = normalizeForScoring(entryEl.value);
+  const source = normalizeForScoring(currentText());
+  if (!source.length) return;
+  if (typed === source) { endTest('complete'); return; }
+  // Allow the run to end once the entry is essentially complete, even with a
+  // small misspelling or two, instead of requiring a character-perfect match.
+  const tolerance = Math.max(2, Math.round(source.length * 0.08));
+  if (typed.length < source.length - tolerance) return;
+  const distance = levenshtein(typed, source);
+  if (distance <= tolerance || typed.length >= source.length + tolerance) endTest('complete');
 }
 
 function setMode(next) {
