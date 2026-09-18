@@ -25,6 +25,12 @@ const trainerStrip = $('trainerStrip');
 const categoryBadge = $('categoryBadge');
 const sourceHeader = $('sourceHeader');
 const durationSelect = $('trainerDuration');
+const appEl = $('app');
+const copyResultsBtn = $('copyResults');
+
+function setAppState(state) {
+  appEl.dataset.state = state;
+}
 
 let mode = 'formal';
 let currentIndex = -1;
@@ -106,7 +112,8 @@ function choosePassage() {
   sourceEl.scrollTop = 0;
   entryEl.value = '';
   resultsEl.classList.remove('show');
-  passFailEl.className = 'value';
+  passFailEl.className = 'verdict-badge';
+  setAppState('idle');
 
   if (mode === 'formal') {
     runSeconds = FORMAL_SECONDS;
@@ -175,7 +182,7 @@ function showResults() {
   errorsEl.textContent = stats.distance;
   marginEl.textContent = (stats.grossWpm >= 40 ? '+' : '') + (stats.grossWpm - 40).toFixed(1) + ' WPM';
   passFailEl.textContent = passed ? 'PASS' : 'NOT YET';
-  passFailEl.className = 'value ' + (passed ? 'pass' : 'fail');
+  passFailEl.className = 'verdict-badge ' + (passed ? 'pass' : 'fail');
   resultNoteEl.textContent = mode === 'header'
     ? 'Header practice complete. No time limit; statistics are shown automatically.'
     : mode === 'trainer'
@@ -191,6 +198,7 @@ function endTest(reason = 'time') {
   interval = null;
   entryEl.disabled = true;
   setControlsDisabled(false);
+  setAppState('complete');
   showResults();
   if (mode === 'header') {
     timerEl.textContent = 'COMPLETE';
@@ -214,6 +222,7 @@ function startTest() {
   entryEl.disabled = false;
   entryEl.focus();
   setControlsDisabled(true);
+  setAppState('running');
   resultsEl.classList.remove('show');
   statusEl.textContent = mode === 'header' ? 'Type the header exactly as shown.' : mode === 'trainer' ? 'Trainer run in progress. Keep moving.' : 'Formal test in progress.';
   if (mode === 'header') {
@@ -268,8 +277,37 @@ trainerModeBtn.addEventListener('click', () => setMode('trainer'));
 headerModeBtn.addEventListener('click', () => setMode('header'));
 durationSelect.addEventListener('change', () => { if (mode === 'trainer' && !running) choosePassage(); });
 
+copyResultsBtn.addEventListener('click', async () => {
+  const summary = [
+    `CritiCall Typing Practice — ${passFailEl.textContent}`,
+    `Gross WPM: ${grossWpmEl.textContent}`,
+    `Accuracy: ${accuracyEl.textContent}`,
+    `Characters Typed: ${charsTypedEl.textContent}`,
+    `Run Length: ${runLengthEl.textContent}`,
+    `Correct-like Chars: ${correctCharsEl.textContent}`,
+    `Errors: ${errorsEl.textContent}`,
+    `Passing Margin: ${marginEl.textContent}`
+  ].join('\n');
+  const original = copyResultsBtn.textContent;
+  try {
+    await navigator.clipboard.writeText(summary);
+    copyResultsBtn.textContent = 'Copied';
+  } catch {
+    copyResultsBtn.textContent = 'Copy failed';
+  }
+  setTimeout(() => { copyResultsBtn.textContent = original; }, 1600);
+});
+
+document.addEventListener('keydown', e => {
+  if (e.key === 'Enter' && (e.metaKey || e.ctrlKey) && !running && !startBtn.disabled) {
+    e.preventDefault();
+    startTest();
+  }
+});
+
 // Initial state.
 entryEl.disabled = true;
 setControlsDisabled(false);
 durationSelect.classList.remove('show');
+setAppState('idle');
 choosePassage();

@@ -1,14 +1,88 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="description" content="CritiCall-style formal typing simulator and high-volume transcription trainer.">
-  <title>CritiCall Typing Practice</title><link rel="stylesheet" href="styles.css">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="description" content="CritiCall-style formal typing simulator and high-volume transcription trainer.">
+<title>CritiCall Typing Practice</title>
+<link rel="stylesheet" href="styles.css">
 </head>
-<body><div class="app">
-  <div class="topbar"><div><h1>CritiCall Typing Practice</h1><div class="status" id="status">Choose Start when ready.</div></div>
-    <div class="controls"><div class="mode-switch" role="group" aria-label="Practice mode"><button id="formalMode" class="mode active">Formal Test</button><button id="trainerMode" class="mode">Typing Trainer</button><button id="headerMode" class="mode">Header Practice</button></div><span class="timer" id="timer">05:00</span><select id="trainerDuration" aria-label="Typing Trainer duration"><option value="120">2 minutes</option><option value="180">3 minutes</option><option value="240">4 minutes</option><option value="300">5 minutes</option></select><button id="newLetter">New Passage</button><button class="primary" id="start">Start</button></div></div>
-  <div class="trainer-strip" id="trainerStrip"><span id="categoryBadge">Mixed</span><span>Choose 2–5 minutes · timer hidden while typing</span></div>
-  <div class="test-grid"><section class="panel"><div class="panel-header" id="sourceHeader">Source Letter</div><div class="letter" id="sourceLetter"></div></section><section class="panel"><div class="panel-header">Transcription</div><textarea id="entry" disabled autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" aria-label="Transcription input"></textarea></section></div>
-  <section class="results" id="results"><div class="result-grid"><div class="metric"><div class="label">Gross WPM</div><div class="value" id="grossWpm">0</div></div><div class="metric"><div class="label">Accuracy</div><div class="value" id="accuracy">0%</div></div><div class="metric"><div class="label">Characters Typed</div><div class="value" id="charsTyped">0</div></div><div class="metric"><div class="label">Run Length</div><div class="value" id="runLength">—</div></div><div class="metric"><div class="label">Correct-like Chars</div><div class="value" id="correctChars">0</div></div><div class="metric"><div class="label">Errors</div><div class="value" id="errors">0</div></div><div class="metric"><div class="label">Passing Margin</div><div class="value" id="margin">—</div></div><div class="metric"><div class="label">Result</div><div class="value" id="passFail">—</div></div></div><div class="note" id="resultNote"></div></section>
-</div><script src="letters.js"></script><script src="trainer-passages.js"></script><script src="header-practice.js"></script><script src="app.js"></script></body></html>
+<body>
+<div class="app" id="app" data-state="idle">
+
+  <header class="console">
+    <div class="console-id">
+      <div class="mark" aria-hidden="true">TX</div>
+      <div>
+        <h1>CritiCall Typing Practice</h1>
+        <div class="status-line">
+          <span class="status-dot" aria-hidden="true"></span>
+          <span id="status" aria-live="polite">Choose Start when ready.</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="controls">
+      <div class="mode-switch" role="group" aria-label="Practice mode">
+        <button id="formalMode" class="mode active">Formal Test</button>
+        <button id="trainerMode" class="mode">Typing Trainer</button>
+        <button id="headerMode" class="mode">Header Practice</button>
+      </div>
+      <select id="trainerDuration" aria-label="Typing Trainer duration">
+        <option value="120">2 minutes</option>
+        <option value="180">3 minutes</option>
+        <option value="240">4 minutes</option>
+        <option value="300">5 minutes</option>
+      </select>
+      <span class="timer" id="timer">05:00</span>
+      <button id="newLetter">New Passage</button>
+      <button class="primary" id="start" title="Start (Ctrl/Cmd + Enter)">Start</button>
+    </div>
+  </header>
+
+  <div class="trainer-strip" id="trainerStrip">
+    <span id="categoryBadge">Mixed</span>
+    <span>Choose 2–5 minutes · timer hidden while typing</span>
+  </div>
+
+  <div class="test-grid">
+    <section class="panel source">
+      <div class="panel-header"><span id="sourceHeader">Source Letter</span></div>
+      <div class="letter" id="sourceLetter"></div>
+    </section>
+    <section class="panel entry">
+      <div class="panel-header"><span>Transcription</span></div>
+      <textarea id="entry" disabled autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" aria-label="Transcription input" placeholder="Your typed transcription will appear here once the run starts."></textarea>
+    </section>
+  </div>
+
+  <section class="results" id="results" aria-live="polite">
+    <div class="results-head">
+      <div class="verdict">
+        <span class="verdict-badge" id="passFail">—</span>
+        <span class="verdict-margin" id="margin">—</span>
+      </div>
+      <button id="copyResults">Copy summary</button>
+    </div>
+
+    <div class="result-grid headline-row">
+      <div class="metric headline"><div class="label">Gross WPM</div><div class="value" id="grossWpm">0</div></div>
+      <div class="metric headline"><div class="label">Accuracy</div><div class="value" id="accuracy">0%</div></div>
+    </div>
+    <div class="result-grid secondary">
+      <div class="metric"><div class="label">Characters Typed</div><div class="value" id="charsTyped">0</div></div>
+      <div class="metric"><div class="label">Run Length</div><div class="value" id="runLength">—</div></div>
+      <div class="metric"><div class="label">Correct-like Chars</div><div class="value" id="correctChars">0</div></div>
+      <div class="metric"><div class="label">Errors</div><div class="value" id="errors">0</div></div>
+    </div>
+
+    <div class="note" id="resultNote"></div>
+  </section>
+
+</div>
+<script src="letters.js"></script>
+<script src="trainer-passages.js"></script>
+<script src="header-practice.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
