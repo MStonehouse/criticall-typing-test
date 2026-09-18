@@ -6,311 +6,311 @@ const formalModeBtn=document.getElementById('formalMode'),trainerModeBtn=documen
 let mode='formal', currentIndex=-1, deck=[], remaining=FORMAL_SECONDS, runSeconds=FORMAL_SECONDS, interval=null,running=false,startedAt=null;
 
 const HEADER_PRACTICE = [
-`JULIA GRAY
-306 MENZIES AVENUE
-COURTENAY, BC V9N 5Z5`,
-`MARCUS THOMPSON
-1847 CEDAR GROVE ROAD
-NANAIMO, BC V9R 3K8`,
-`EMILY CARTER
-529 WILLOWBROOK LANE
-ABBOTSFORD, BC V2T 6M4`,
-`DANIEL MORRISON
-742 FITZGERALD AVENUE
-COURTENAY, BC V9N 2L6`,
-`SARAH MCKENZIE
-1639 ALDER STREET
-CAMPBELL RIVER, BC V9W 4P2`,
-`JONATHAN REID
-2847 MEADOWBROOK DRIVE
-COMOX, BC V9M 1H7`,
-`NICOLE BOUCHARD
-918 RIVERBEND ROAD
-DUNCAN, BC V9L 5C3`,
-`ANDREW WILSON
-4518 MAPLE CRESCENT
-PARKSVILLE, BC V9P 7N2`,
-`STEPHANIE BOUDREAU
-927 HAWTHORNE AVENUE
-COURTENAY, BC V9N 8R1`,
-`CHRISTOPHER MCKENZIE
-2185 OAK BAY ROAD
-VICTORIA, BC V8P 2G7`,
-`ALEXANDRA WHITMORE
-3741 CEDAR HILL ROAD
-SAANICH, BC V8X 2L9`,
-`GENEVIEVE MONTGOMERY
-6158 SPRUCE STREET
-NANAIMO, BC V9T 3A6`,
-`AMANDA PELLETIER
-103 ASPEN RIDGE ROAD
-ABBOTSFORD, BC V2T A0C`,
-`BRIAN HENDERSON
-120 BIRCHWOOD CRESCENT
-CAMPBELL RIVER, BC V9W D7H`,
-`CAROLINE BEAULIEU
-137 CEDAR GROVE LANE
-CHILLIWACK, BC V2P G4N`,
-`DAVID WHITAKER
-154 CREEKSIDE AVENUE
-COMOX, BC V9M K1V`,
-`ELIZABETH FOSTER
-171 EAGLE VIEW DRIVE
-COURTENAY, BC V9N N8B`,
-`FRANKLIN MORRIS
-188 FERNDALE ROAD
-DUNCAN, BC V9L S5G`,
-`GRACE PATTERSON
-205 GARDENIA STREET
-KAMLOOPS, BC V2C W2M`,
-`HENRY CAMPBELL
-222 HARBOUR RIDGE DRIVE
-KELOWNA, BC V1Y A9T`,
-`ISABELLE TREMBLAY
-239 IVY CREEK ROAD
-NANAIMO, BC V9R D6A`,
-`JAMES RICHARDSON
-256 JUNIPER PARKWAY
-PARKSVILLE, BC V9P G3F`,
-`KAREN MCDONALD
-273 LAUREL HEIGHTS CRESCENT
-PRINCE GEORGE, BC V2L K0L`,
-`LUCAS ANDERSON
-290 MAPLE RIDGE AVENUE
-SAANICH, BC V8X N7S`,
-`MELANIE GAGNON
-307 NORTHBROOK ROAD
-VANCOUVER, BC V5K S4Y`,
-`NATHAN ROBERTS
-324 OAKRIDGE DRIVE
-VICTORIA, BC V8P W1E`,
-`OLIVIA MARTIN
-341 PINEVIEW CRESCENT
-ABBOTSFORD, BC V2T A8K`,
-`PATRICK LEBLANC
-358 QUARRY ROAD
-CAMPBELL RIVER, BC V9W D5R`,
-`QUINN HARRIS
-375 RAVENWOOD STREET
-CHILLIWACK, BC V2P G2X`,
-`RACHEL THOMPSON
-392 SEASIDE DRIVE
-COMOX, BC V9M K9D`,
-`SAMUEL CLARK
-409 TIMBERLINE AVENUE
-COURTENAY, BC V9N N6J`,
-`TARA MURRAY
-426 VALLEY VIEW ROAD
-DUNCAN, BC V9L S3P`,
-`VICTORIA BOUCHARD
-443 WESTBROOK CRESCENT
-KAMLOOPS, BC V2C W0W`,
-`WILLIAM PARKER
-460 YORKSHIRE DRIVE
-KELOWNA, BC V1Y A7C`,
-`YVETTE ROUSSEAU
-477 ASPEN RIDGE ROAD
-NANAIMO, BC V9R D4H`,
-`ZACHARY BENNETT
-494 BIRCHWOOD CRESCENT
-PARKSVILLE, BC V9P G1N`,
-`ALLISON FRASER
-511 CEDAR GROVE LANE
-PRINCE GEORGE, BC V2L K8V`,
-`BRADLEY TURNER
-528 CREEKSIDE AVENUE
-SAANICH, BC V8X N5B`,
-`CHLOE DESROCHERS
-545 EAGLE VIEW DRIVE
-VANCOUVER, BC V5K S2G`,
-`DEREK JOHNSTON
-562 FERNDALE ROAD
-VICTORIA, BC V8P W9M`,
-`ERIN MURPHY
-579 GARDENIA STREET
-ABBOTSFORD, BC V2T A6T`,
-`FELIX LAMBERT
-596 HARBOUR RIDGE DRIVE
-CAMPBELL RIVER, BC V9W D3A`,
-`GEORGIA HUGHES
-613 IVY CREEK ROAD
-CHILLIWACK, BC V2P G0F`,
-`HARRISON PRICE
-630 JUNIPER PARKWAY
-COMOX, BC V9M K7L`,
-`JULIANNE FONTAINE
-647 LAUREL HEIGHTS CRESCENT
-COURTENAY, BC V9N N4S`,
-`KEVIN WALLACE
-664 MAPLE RIDGE AVENUE
-DUNCAN, BC V9L S1Y`,
-`LAUREN MITCHELL
-681 NORTHBROOK ROAD
-KAMLOOPS, BC V2C W8E`,
-`MATTHEW GRANT
-698 OAKRIDGE DRIVE
-KELOWNA, BC V1Y A5K`,
-`NATALIE FOURNIER
-715 PINEVIEW CRESCENT
-NANAIMO, BC V9R D2R`,
-`OWEN STEWART
-732 QUARRY ROAD
-PARKSVILLE, BC V9P G9X`,
-`PENNY HART
-749 RAVENWOOD STREET
-PRINCE GEORGE, BC V2L K6D`,
-`RYAN MACLEOD
-766 SEASIDE DRIVE
-SAANICH, BC V8X N3J`,
-`SOPHIE MERCIER
-783 TIMBERLINE AVENUE
-VANCOUVER, BC V5K S0P`,
-`THOMAS WALKER
-800 VALLEY VIEW ROAD
-VICTORIA, BC V8P W7W`,
-`URSULA REID
-817 WESTBROOK CRESCENT
-ABBOTSFORD, BC V2T A4C`,
-`VINCENT CARRIER
-834 YORKSHIRE DRIVE
-CAMPBELL RIVER, BC V9W D1H`,
-`WENDY FLEMING
-851 ASPEN RIDGE ROAD
-CHILLIWACK, BC V2P G8N`,
-`AARON MASON
-868 BIRCHWOOD CRESCENT
-COMOX, BC V9M K5V`,
-`BELINDA CLARK
-885 CEDAR GROVE LANE
-COURTENAY, BC V9N N2B`,
-`COLIN MACKENZIE
-902 CREEKSIDE AVENUE
-DUNCAN, BC V9L S9G`,
-`DIANE ROY
-919 EAGLE VIEW DRIVE
-KAMLOOPS, BC V2C W6M`,
-`EDWARD SULLIVAN
-936 FERNDALE ROAD
-KELOWNA, BC V1Y A3T`,
-`FIONA ROSS
-953 GARDENIA STREET
-NANAIMO, BC V9R D0A`,
-`GREGORY HALL
-970 HARBOUR RIDGE DRIVE
-PARKSVILLE, BC V9P G7F`,
-`HANNAH SIMPSON
-987 IVY CREEK ROAD
-PRINCE GEORGE, BC V2L K4L`,
-`IAN MONTGOMERY
-1004 JUNIPER PARKWAY
-SAANICH, BC V8X N1S`,
-`JESSICA WATSON
-1021 LAUREL HEIGHTS CRESCENT
-VANCOUVER, BC V5K S8Y`,
-`KYLE DONOVAN
-1038 MAPLE RIDGE AVENUE
-VICTORIA, BC V8P W5E`,
-`LINDA WEBSTER
-1055 NORTHBROOK ROAD
-ABBOTSFORD, BC V2T A2K`,
-`MICHAEL BROWN
-1072 OAKRIDGE DRIVE
-CAMPBELL RIVER, BC V9W D9R`,
-`NICOLE FRASER
-1089 PINEVIEW CRESCENT
-CHILLIWACK, BC V2P G6X`,
-`OSCAR MARTIN
-1106 QUARRY ROAD
-COMOX, BC V9M K3D`,
-`PAIGE WILSON
-1123 RAVENWOOD STREET
-COURTENAY, BC V9N N0J`,
-`ROBERT BLAIR
-1140 SEASIDE DRIVE
-DUNCAN, BC V9L S7P`,
-`SANDRA PARENT
-1157 TIMBERLINE AVENUE
-KAMLOOPS, BC V2C W4W`,
-`TIMOTHY COLLINS
-1174 VALLEY VIEW ROAD
-KELOWNA, BC V1Y A1C`,
-`VANESSA REID
-1191 WESTBROOK CRESCENT
-NANAIMO, BC V9R D8H`,
-`WALTER GRAHAM
-1208 YORKSHIRE DRIVE
-PARKSVILLE, BC V9P G5N`,
-`ABIGAIL KING
-1225 ASPEN RIDGE ROAD
-PRINCE GEORGE, BC V2L K2V`,
-`BRENDAN COLE
-1242 BIRCHWOOD CRESCENT
-SAANICH, BC V8X N9B`,
-`CASSANDRA HUGHES
-1259 CEDAR GROVE LANE
-VANCOUVER, BC V5K S6G`,
-`DANIELLE MOORE
-1276 CREEKSIDE AVENUE
-VICTORIA, BC V8P W3M`,
-`ETHAN FLETCHER
-1293 EAGLE VIEW DRIVE
-ABBOTSFORD, BC V2T A0T`,
-`FELICITY BROWN
-1310 FERNDALE ROAD
-CAMPBELL RIVER, BC V9W D7A`,
-`GABRIELLE LECLERC
-1327 GARDENIA STREET
-CHILLIWACK, BC V2P G4F`,
-`HUGO MARTIN
-1344 HARBOUR RIDGE DRIVE
-COMOX, BC V9M K1L`,
-`JENNIFER ROSS
-1361 IVY CREEK ROAD
-COURTENAY, BC V9N N8S`,
-`KIERAN MURPHY
-1378 JUNIPER PARKWAY
-DUNCAN, BC V9L S5Y`,
-`LEAH THOMAS
-1395 LAUREL HEIGHTS CRESCENT
-KAMLOOPS, BC V2C W2E`,
-`MARC DESJARDINS
-1412 MAPLE RIDGE AVENUE
-KELOWNA, BC V1Y A9K`,
-`NOAH ROBINSON
-1429 NORTHBROOK ROAD
-NANAIMO, BC V9R D6R`,
-`PAMELA GREEN
-1446 OAKRIDGE DRIVE
-PARKSVILLE, BC V9P G3X`,
-`RICHARD EVANS
-1463 PINEVIEW CRESCENT
-PRINCE GEORGE, BC V2L K0D`,
-`SHEILA CARTER
-1480 QUARRY ROAD
-SAANICH, BC V8X N7J`,
-`TRAVIS MILLER
-1497 RAVENWOOD STREET
-VANCOUVER, BC V5K S4P`,
-`VERONICA BAKER
-1514 SEASIDE DRIVE
-VICTORIA, BC V8P W1W`,
-`WAYNE HARRISON
-1531 TIMBERLINE AVENUE
-ABBOTSFORD, BC V2T A8C`,
-`ZOE RICHARD
-1548 VALLEY VIEW ROAD
-CAMPBELL RIVER, BC V9W D5H`,
-`CLARE MONTGOMERY
-1565 WESTBROOK CRESCENT
-CHILLIWACK, BC V2P G2N`,
-`DUNCAN FERGUSON
-1582 YORKSHIRE DRIVE
-COMOX, BC V9M K9V`
+`Julia Gray
+306 Menzies Avenue
+Courtenay, BC V9N 5Z5`,
+`Marcus Thompson
+1847 Cedar Grove Road
+Nanaimo, BC V9R 3K8`,
+`Emily Carter
+529 Willowbrook Lane
+Abbotsford, BC V2T 6M4`,
+`Daniel Morrison
+742 Fitzgerald Avenue
+Courtenay, BC V9N 2L6`,
+`Sarah McKenzie
+1639 Alder Street
+Campbell River, BC V9W 4P2`,
+`Jonathan Reid
+2847 Meadowbrook Drive
+Comox, BC V9M 1H7`,
+`Nicole Bouchard
+918 Riverbend Road
+Duncan, BC V9L 5C3`,
+`Andrew Wilson
+4518 Maple Crescent
+Parksville, BC V9P 7N2`,
+`Stephanie Boudreau
+927 Hawthorne Avenue
+Courtenay, BC V9N 8R1`,
+`Christopher McKenzie
+2185 Oak Bay Road
+Victoria, BC V8P 2G7`,
+`Alexandra Whitmore
+3741 Cedar Hill Road
+Saanich, BC V8X 2L9`,
+`Genevieve Montgomery
+6158 Spruce Street
+Nanaimo, BC V9T 3A6`,
+`Amanda Pelletier
+103 Aspen Ridge Road
+Abbotsford, BC V2T A0C`,
+`Brian Henderson
+120 Birchwood Crescent
+Campbell River, BC V9W D7H`,
+`Caroline Beaulieu
+137 Cedar Grove Lane
+Chilliwack, BC V2P G4N`,
+`David Whitaker
+154 Creekside Avenue
+Comox, BC V9M K1V`,
+`Elizabeth Foster
+171 Eagle View Drive
+Courtenay, BC V9N N8B`,
+`Franklin Morris
+188 Ferndale Road
+Duncan, BC V9L S5G`,
+`Grace Patterson
+205 Gardenia Street
+Kamloops, BC V2C W2M`,
+`Henry Campbell
+222 Harbour Ridge Drive
+Kelowna, BC V1Y A9T`,
+`Isabelle Tremblay
+239 Ivy Creek Road
+Nanaimo, BC V9R D6A`,
+`James Richardson
+256 Juniper Parkway
+Parksville, BC V9P G3F`,
+`Karen McDonald
+273 Laurel Heights Crescent
+Prince George, BC V2L K0L`,
+`Lucas Anderson
+290 Maple Ridge Avenue
+Saanich, BC V8X N7S`,
+`Melanie Gagnon
+307 Northbrook Road
+Vancouver, BC V5K S4Y`,
+`Nathan Roberts
+324 Oakridge Drive
+Victoria, BC V8P W1E`,
+`Olivia Martin
+341 Pineview Crescent
+Abbotsford, BC V2T A8K`,
+`Patrick LeBlanc
+358 Quarry Road
+Campbell River, BC V9W D5R`,
+`Quinn Harris
+375 Ravenwood Street
+Chilliwack, BC V2P G2X`,
+`Rachel Thompson
+392 Seaside Drive
+Comox, BC V9M K9D`,
+`Samuel Clark
+409 Timberline Avenue
+Courtenay, BC V9N N6J`,
+`Tara Murray
+426 Valley View Road
+Duncan, BC V9L S3P`,
+`Victoria Bouchard
+443 Westbrook Crescent
+Kamloops, BC V2C W0W`,
+`William Parker
+460 Yorkshire Drive
+Kelowna, BC V1Y A7C`,
+`Yvette Rousseau
+477 Aspen Ridge Road
+Nanaimo, BC V9R D4H`,
+`Zachary Bennett
+494 Birchwood Crescent
+Parksville, BC V9P G1N`,
+`Allison Fraser
+511 Cedar Grove Lane
+Prince George, BC V2L K8V`,
+`Bradley Turner
+528 Creekside Avenue
+Saanich, BC V8X N5B`,
+`Chloe Desrochers
+545 Eagle View Drive
+Vancouver, BC V5K S2G`,
+`Derek Johnston
+562 Ferndale Road
+Victoria, BC V8P W9M`,
+`Erin Murphy
+579 Gardenia Street
+Abbotsford, BC V2T A6T`,
+`Felix Lambert
+596 Harbour Ridge Drive
+Campbell River, BC V9W D3A`,
+`Georgia Hughes
+613 Ivy Creek Road
+Chilliwack, BC V2P G0F`,
+`Harrison Price
+630 Juniper Parkway
+Comox, BC V9M K7L`,
+`Julianne Fontaine
+647 Laurel Heights Crescent
+Courtenay, BC V9N N4S`,
+`Kevin Wallace
+664 Maple Ridge Avenue
+Duncan, BC V9L S1Y`,
+`Lauren Mitchell
+681 Northbrook Road
+Kamloops, BC V2C W8E`,
+`Matthew Grant
+698 Oakridge Drive
+Kelowna, BC V1Y A5K`,
+`Natalie Fournier
+715 Pineview Crescent
+Nanaimo, BC V9R D2R`,
+`Owen Stewart
+732 Quarry Road
+Parksville, BC V9P G9X`,
+`Penny Hart
+749 Ravenwood Street
+Prince George, BC V2L K6D`,
+`Ryan MacLeod
+766 Seaside Drive
+Saanich, BC V8X N3J`,
+`Sophie Mercier
+783 Timberline Avenue
+Vancouver, BC V5K S0P`,
+`Thomas Walker
+800 Valley View Road
+Victoria, BC V8P W7W`,
+`Ursula Reid
+817 Westbrook Crescent
+Abbotsford, BC V2T A4C`,
+`Vincent Carrier
+834 Yorkshire Drive
+Campbell River, BC V9W D1H`,
+`Wendy Fleming
+851 Aspen Ridge Road
+Chilliwack, BC V2P G8N`,
+`Aaron Mason
+868 Birchwood Crescent
+Comox, BC V9M K5V`,
+`Belinda Clark
+885 Cedar Grove Lane
+Courtenay, BC V9N N2B`,
+`Colin Mackenzie
+902 Creekside Avenue
+Duncan, BC V9L S9G`,
+`Diane Roy
+919 Eagle View Drive
+Kamloops, BC V2C W6M`,
+`Edward Sullivan
+936 Ferndale Road
+Kelowna, BC V1Y A3T`,
+`Fiona Ross
+953 Gardenia Street
+Nanaimo, BC V9R D0A`,
+`Gregory Hall
+970 Harbour Ridge Drive
+Parksville, BC V9P G7F`,
+`Hannah Simpson
+987 Ivy Creek Road
+Prince George, BC V2L K4L`,
+`Ian Montgomery
+1004 Juniper Parkway
+Saanich, BC V8X N1S`,
+`Jessica Watson
+1021 Laurel Heights Crescent
+Vancouver, BC V5K S8Y`,
+`Kyle Donovan
+1038 Maple Ridge Avenue
+Victoria, BC V8P W5E`,
+`Linda Webster
+1055 Northbrook Road
+Abbotsford, BC V2T A2K`,
+`Michael Brown
+1072 Oakridge Drive
+Campbell River, BC V9W D9R`,
+`Nicole Fraser
+1089 Pineview Crescent
+Chilliwack, BC V2P G6X`,
+`Oscar Martin
+1106 Quarry Road
+Comox, BC V9M K3D`,
+`Paige Wilson
+1123 Ravenwood Street
+Courtenay, BC V9N N0J`,
+`Robert Blair
+1140 Seaside Drive
+Duncan, BC V9L S7P`,
+`Sandra Parent
+1157 Timberline Avenue
+Kamloops, BC V2C W4W`,
+`Timothy Collins
+1174 Valley View Road
+Kelowna, BC V1Y A1C`,
+`Vanessa Reid
+1191 Westbrook Crescent
+Nanaimo, BC V9R D8H`,
+`Walter Graham
+1208 Yorkshire Drive
+Parksville, BC V9P G5N`,
+`Abigail King
+1225 Aspen Ridge Road
+Prince George, BC V2L K2V`,
+`Brendan Cole
+1242 Birchwood Crescent
+Saanich, BC V8X N9B`,
+`Cassandra Hughes
+1259 Cedar Grove Lane
+Vancouver, BC V5K S6G`,
+`Danielle Moore
+1276 Creekside Avenue
+Victoria, BC V8P W3M`,
+`Ethan Fletcher
+1293 Eagle View Drive
+Abbotsford, BC V2T A0T`,
+`Felicity Brown
+1310 Ferndale Road
+Campbell River, BC V9W D7A`,
+`Gabrielle Leclerc
+1327 Gardenia Street
+Chilliwack, BC V2P G4F`,
+`Hugo Martin
+1344 Harbour Ridge Drive
+Comox, BC V9M K1L`,
+`Jennifer Ross
+1361 Ivy Creek Road
+Courtenay, BC V9N N8S`,
+`Kieran Murphy
+1378 Juniper Parkway
+Duncan, BC V9L S5Y`,
+`Leah Thomas
+1395 Laurel Heights Crescent
+Kamloops, BC V2C W2E`,
+`Marc Desjardins
+1412 Maple Ridge Avenue
+Kelowna, BC V1Y A9K`,
+`Noah Robinson
+1429 Northbrook Road
+Nanaimo, BC V9R D6R`,
+`Pamela Green
+1446 Oakridge Drive
+Parksville, BC V9P G3X`,
+`Richard Evans
+1463 Pineview Crescent
+Prince George, BC V2L K0D`,
+`Sheila Carter
+1480 Quarry Road
+Saanich, BC V8X N7J`,
+`Travis Miller
+1497 Ravenwood Street
+Vancouver, BC V5K S4P`,
+`Veronica Baker
+1514 Seaside Drive
+Victoria, BC V8P W1W`,
+`Wayne Harrison
+1531 Timberline Avenue
+Abbotsford, BC V2T A8C`,
+`Zoe Richard
+1548 Valley View Road
+Campbell River, BC V9W D5H`,
+`Clare Montgomery
+1565 Westbrook Crescent
+Chilliwack, BC V2P G2N`,
+`Duncan Ferguson
+1582 Yorkshire Drive
+Comox, BC V9M K9V`
 ];
 
 function pool(){return mode==='formal'?LETTERS:mode==='header'?HEADER_PRACTICE:TRAINER_PASSAGES;}
 function refillDeck(){const p=pool();deck=Array.from({length:p.length},(_,i)=>i);for(let i=deck.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[deck[i],deck[j]]=[deck[j],deck[i]];}if(deck.length>1&&deck[deck.length-1]===currentIndex)[deck[0],deck[deck.length-1]]=[deck[deck.length-1],deck[0]];}
-function currentText(){return mode==='formal'?LETTERS[currentIndex]:mode==='header'?HEADER_PRACTICE[currentIndex]:TRAINER_PASSAGES[currentIndex].text;}
+function currentText(){return mode==='formal'?LETTERS[currentIndex].text:mode==='header'?HEADER_PRACTICE[currentIndex]:TRAINER_PASSAGES[currentIndex].text;}
 function normalizeForScoring(t){return t.replace(/[ \t]+(?=\n)/g,'').replace(/[ \t]+$/g,'');}
 function syncSourceToTypingProgress(){if(!running)return;const s=currentText(),t=normalizeForScoring(entryEl.value);if(!s.length)return;const progress=Math.max(0,Math.min(1,t.length/s.length)),max=Math.max(0,sourceEl.scrollHeight-sourceEl.clientHeight),target=Math.max(0,Math.min(max,max*progress-sourceEl.clientHeight*.18));sourceEl.scrollTo({top:target,behavior:'smooth'});}
 function formatTime(total){return String(Math.floor(total/60)).padStart(2,'0')+':'+String(total%60).padStart(2,'0');}
