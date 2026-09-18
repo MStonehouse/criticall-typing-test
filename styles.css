@@ -83,15 +83,44 @@ body {
 
 .console {
   display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 20px;
+  flex-direction: column;
+  gap: 14px;
   padding-bottom: 18px;
   border-bottom: 1px solid var(--border-soft);
   margin-bottom: 18px;
-  flex-wrap: wrap;
   flex: 0 0 auto;
 }
+
+.console-top {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.console-links {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+
+.btn-link {
+  display: inline-flex;
+  align-items: center;
+  font: inherit;
+  color: var(--text);
+  text-decoration: none;
+  padding: 9px 16px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: var(--panel);
+  cursor: pointer;
+  font-size: 0.88rem;
+  font-weight: 500;
+  transition: border-color 0.15s ease, background 0.15s ease;
+}
+.btn-link:hover { border-color: var(--muted); }
 
 .console-id {
   display: flex;
@@ -263,6 +292,12 @@ button.primary:hover:not(:disabled) {
   filter: brightness(1.06);
 }
 
+button.primary.stop {
+  background: var(--live);
+  border-color: var(--live);
+  color: #fff;
+}
+
 button:disabled {
   opacity: 0.4;
   cursor: not-allowed;
@@ -332,13 +367,6 @@ button:disabled {
 }
 
 /* ---------- Panels ---------- */
-
-#practiceView {
-  display: flex;
-  flex-direction: column;
-  flex: 1 1 auto;
-  min-height: 0;
-}
 
 .test-grid {
   display: grid;
@@ -652,7 +680,9 @@ textarea::placeholder { color: var(--muted-dim); }
 
 @media (max-width: 800px) {
   .app { padding: 16px 14px; }
-  .console { flex-direction: column; align-items: stretch; }
+  .console-top { align-items: stretch; }
+  .console-links { width: 100%; }
+  .console-links .btn-link, .console-links button { flex: 1; }
   .controls { width: 100%; }
   .mode-switch { order: 4; width: 100%; }
   .mode-switch button { flex: 1; }

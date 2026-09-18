@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="description" content="Saved practice history for CritiCall Typing Practice.">
+<title>Practice History — CritiCall Typing Practice</title>
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<div class="app" id="app" data-state="idle">
+
+  <header class="console">
+    <div class="console-top">
+      <div class="console-id">
+        <div class="mark" aria-hidden="true">TX</div>
+        <div>
+          <h1>Practice History</h1>
+          <div class="status-line">
+            <span>Saved on this device only.</span>
+          </div>
+        </div>
+      </div>
+      <div class="console-links">
+        <a id="backLink" class="btn-link" href="index.html">Back to practice</a>
+        <button id="clearHistory">Clear history</button>
+      </div>
+    </div>
+  </header>
+
+  <section class="history-view" id="historyView">
+    <div class="result-grid headline-row history-summary">
+      <div class="metric"><div class="label">Total Runs</div><div class="value" id="histCount">0</div></div>
+      <div class="metric"><div class="label">Average WPM</div><div class="value" id="histAvgWpm">—</div></div>
+      <div class="metric"><div class="label">Average Accuracy</div><div class="value" id="histAvgAcc">—</div></div>
+      <div class="metric"><div class="label">Pass Rate</div><div class="value" id="histPassRate">—</div></div>
+    </div>
+    <div class="history-list" id="historyList"></div>
+  </section>
+
+</div>
+<script src="history.js"></script>
+</body>
+</html>

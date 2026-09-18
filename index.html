@@ -11,14 +11,20 @@
 <div class="app" id="app" data-state="idle">
 
   <header class="console">
-    <div class="console-id">
-      <div class="mark" aria-hidden="true">TX</div>
-      <div>
-        <h1>CritiCall Typing Practice</h1>
-        <div class="status-line">
-          <span class="status-dot" aria-hidden="true"></span>
-          <span id="status" aria-live="polite">Choose Start when ready.</span>
+    <div class="console-top">
+      <div class="console-id">
+        <div class="mark" aria-hidden="true">TX</div>
+        <div>
+          <h1>CritiCall Typing Practice</h1>
+          <div class="status-line">
+            <span class="status-dot" aria-hidden="true"></span>
+            <span id="status" aria-live="polite">Choose Start when ready.</span>
+          </div>
         </div>
+      </div>
+      <div class="console-links">
+        <a id="historyLink" class="btn-link" href="history.html" title="View saved practice history">History</a>
+        <button id="settingsBtn" title="Adjust pass threshold">Settings</button>
       </div>
     </div>
 
@@ -28,8 +34,6 @@
         <button id="trainerMode" class="mode">Typing Trainer</button>
         <button id="headerMode" class="mode">Header Practice</button>
       </div>
-      <button id="historyBtn" title="View saved practice history">History</button>
-      <button id="settingsBtn" title="Adjust pass threshold">Settings</button>
       <select id="trainerDuration" aria-label="Typing Trainer duration">
         <option value="120">2 minutes</option>
         <option value="180">3 minutes</option>
@@ -38,7 +42,7 @@
       </select>
       <span class="timer" id="timer">05:00</span>
       <button id="newLetter">New Passage</button>
-      <button class="primary" id="start" title="Start (Ctrl/Cmd + Enter)">Start</button>
+      <button class="primary" id="start" title="Start (Ctrl/Cmd + Enter) · Stop ends the run early">Start</button>
     </div>
   </header>
 
@@ -54,61 +58,42 @@
     <span>Choose 2–5 minutes · timer hidden while typing</span>
   </div>
 
-  <div id="practiceView">
-    <div class="test-grid">
-      <section class="panel source">
-        <div class="panel-header"><span id="sourceHeader">Source Letter</span></div>
-        <div class="letter" id="sourceLetter"></div>
-      </section>
-      <section class="panel entry">
-        <div class="panel-header"><span>Transcription</span></div>
-        <textarea id="entry" disabled autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" aria-label="Transcription input" placeholder="Your typed transcription will appear here once the run starts."></textarea>
-      </section>
-    </div>
-
-    <section class="results" id="results" aria-live="polite">
-      <div class="results-head">
-        <div class="verdict">
-          <span class="verdict-badge" id="passFail">—</span>
-          <span class="verdict-margin" id="margin">—</span>
-        </div>
-        <div class="results-actions">
-          <button id="reviewErrors">Review errors</button>
-          <button id="copyResults">Copy summary</button>
-        </div>
-      </div>
-
-      <div class="result-grid headline-row">
-        <div class="metric headline"><div class="label">Gross WPM</div><div class="value" id="grossWpm">0</div></div>
-        <div class="metric headline"><div class="label">Accuracy</div><div class="value" id="accuracy">0%</div></div>
-      </div>
-      <div class="result-grid secondary">
-        <div class="metric"><div class="label">Characters Typed</div><div class="value" id="charsTyped">0</div></div>
-        <div class="metric"><div class="label">Run Length</div><div class="value" id="runLength">—</div></div>
-        <div class="metric"><div class="label">Correct-like Chars</div><div class="value" id="correctChars">0</div></div>
-        <div class="metric"><div class="label">Errors</div><div class="value" id="errors">0</div></div>
-      </div>
-
-      <div class="note" id="resultNote"></div>
-      <div class="error-review" id="errorReview" hidden></div>
+  <div class="test-grid">
+    <section class="panel source">
+      <div class="panel-header"><span id="sourceHeader">Source Letter</span></div>
+      <div class="letter" id="sourceLetter"></div>
+    </section>
+    <section class="panel entry">
+      <div class="panel-header"><span>Transcription</span></div>
+      <textarea id="entry" disabled autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" aria-label="Transcription input" placeholder="Your typed transcription will appear here once the run starts."></textarea>
     </section>
   </div>
 
-  <section class="history-view" id="historyView" hidden>
-    <div class="history-head">
-      <h2>Practice History</h2>
-      <div class="history-actions">
-        <button id="clearHistory">Clear history</button>
-        <button class="primary" id="closeHistory">Back to practice</button>
+  <section class="results" id="results" aria-live="polite">
+    <div class="results-head">
+      <div class="verdict">
+        <span class="verdict-badge" id="passFail">—</span>
+        <span class="verdict-margin" id="margin">—</span>
+      </div>
+      <div class="results-actions">
+        <button id="reviewErrors">Review errors</button>
+        <button id="copyResults">Copy summary</button>
       </div>
     </div>
-    <div class="result-grid headline-row history-summary">
-      <div class="metric"><div class="label">Total Runs</div><div class="value" id="histCount">0</div></div>
-      <div class="metric"><div class="label">Average WPM</div><div class="value" id="histAvgWpm">—</div></div>
-      <div class="metric"><div class="label">Average Accuracy</div><div class="value" id="histAvgAcc">—</div></div>
-      <div class="metric"><div class="label">Pass Rate</div><div class="value" id="histPassRate">—</div></div>
+
+    <div class="result-grid headline-row">
+      <div class="metric headline"><div class="label">Gross WPM</div><div class="value" id="grossWpm">0</div></div>
+      <div class="metric headline"><div class="label">Accuracy</div><div class="value" id="accuracy">0%</div></div>
     </div>
-    <div class="history-list" id="historyList"></div>
+    <div class="result-grid secondary">
+      <div class="metric"><div class="label">Characters Typed</div><div class="value" id="charsTyped">0</div></div>
+      <div class="metric"><div class="label">Run Length</div><div class="value" id="runLength">—</div></div>
+      <div class="metric"><div class="label">Correct-like Chars</div><div class="value" id="correctChars">0</div></div>
+      <div class="metric"><div class="label">Errors</div><div class="value" id="errors">0</div></div>
+    </div>
+
+    <div class="note" id="resultNote"></div>
+    <div class="error-review" id="errorReview" hidden></div>
   </section>
 
 </div>

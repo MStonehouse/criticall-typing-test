@@ -29,21 +29,11 @@ const appEl = $('app');
 const copyResultsBtn = $('copyResults');
 const reviewErrorsBtn = $('reviewErrors');
 const errorReviewEl = $('errorReview');
-const historyBtn = $('historyBtn');
 const settingsBtn = $('settingsBtn');
 const settingsBar = $('settingsBar');
 const thresholdWpmInput = $('thresholdWpm');
 const thresholdAccInput = $('thresholdAcc');
 const resetThresholdBtn = $('resetThreshold');
-const practiceViewEl = $('practiceView');
-const historyViewEl = $('historyView');
-const closeHistoryBtn = $('closeHistory');
-const clearHistoryBtn = $('clearHistory');
-const historyListEl = $('historyList');
-const histCountEl = $('histCount');
-const histAvgWpmEl = $('histAvgWpm');
-const histAvgAccEl = $('histAvgAcc');
-const histPassRateEl = $('histPassRate');
 
 function setAppState(state) {
   appEl.dataset.state = state;
@@ -141,13 +131,11 @@ function formatTime(total) {
 }
 
 function setControlsDisabled(disabled) {
-  startBtn.disabled = disabled;
   newBtn.disabled = disabled;
   formalModeBtn.disabled = disabled;
   trainerModeBtn.disabled = disabled;
   headerModeBtn.disabled = disabled;
   durationSelect.disabled = disabled;
-  historyBtn.disabled = disabled;
   settingsBtn.disabled = disabled;
 }
 
@@ -226,9 +214,9 @@ function calculateStats() {
   const distance = levenshtein(typed, expected);
   const correctLike = Math.max(0, typed.length - distance);
   const accuracy = typed.length ? Math.max(0, Math.min(100, (correctLike / typed.length) * 100)) : 0;
-  const elapsedSeconds = mode === 'header'
-    ? Math.max(1, (Date.now() - startedAt) / 1000)
-    : runSeconds;
+  // Actual elapsed time, not the nominal run length: this stays correct whether
+  // the run finished naturally, hit its timer, or was stopped early by hand.
+  const elapsedSeconds = Math.max(1, (Date.now() - startedAt) / 1000);
   const elapsedMinutes = elapsedSeconds / 60;
   const charsTyped = typed.replace(/\n/g, '').length;
   const grossWpm = (charsTyped / 5) / elapsedMinutes;
@@ -241,7 +229,7 @@ function showResults() {
   grossWpmEl.textContent = stats.grossWpm.toFixed(1);
   accuracyEl.textContent = stats.accuracy.toFixed(1) + '%';
   charsTypedEl.textContent = entryEl.value.length;
-  runLengthEl.textContent = mode === 'header' ? `${(stats.elapsedSeconds / 60).toFixed(2)} min` : `${runSeconds / 60} min`;
+  runLengthEl.textContent = `${(stats.elapsedSeconds / 60).toFixed(2)} min`;
   correctCharsEl.textContent = stats.correctLike;
   errorsEl.textContent = stats.distance;
   marginEl.textContent = (stats.grossWpm >= settings.wpm ? '+' : '') + (stats.grossWpm - settings.wpm).toFixed(1) + ' WPM';
@@ -264,7 +252,7 @@ function showResults() {
     grossWpm: Number(stats.grossWpm.toFixed(1)),
     accuracy: Number(stats.accuracy.toFixed(1)),
     pass: passed,
-    runLength: mode === 'header' ? Number((stats.elapsedSeconds / 60).toFixed(2)) : runSeconds / 60
+    runLength: Number((stats.elapsedSeconds / 60).toFixed(2))
   });
 }
 
@@ -277,13 +265,20 @@ function endTest(reason = 'time') {
   entryEl.disabled = true;
   setControlsDisabled(false);
   setAppState('complete');
+  startBtn.textContent = 'Start';
+  startBtn.classList.remove('stop');
   showResults();
   if (mode === 'header') {
-    timerEl.textContent = 'COMPLETE';
-    statusEl.textContent = 'Header complete. Statistics are shown below.';
+    timerEl.textContent = reason === 'manual' ? 'STOPPED' : 'COMPLETE';
+    statusEl.textContent = reason === 'manual'
+      ? 'Stopped early. Statistics are shown below.'
+      : 'Header complete. Statistics are shown below.';
   } else if (reason === 'complete') {
     statusEl.textContent = 'Passage complete. Statistics are shown below.';
     timerEl.textContent = formatTime(remaining);
+  } else if (reason === 'manual') {
+    statusEl.textContent = 'Stopped early. Statistics are shown below.';
+    timerEl.textContent = mode === 'trainer' ? 'STOPPED' : formatTime(remaining);
   } else {
     statusEl.textContent = mode === 'trainer' ? 'Run complete. Nice work—go again when ready.' : 'Time expired. Test complete.';
     timerEl.textContent = formatTime(0);
@@ -302,6 +297,8 @@ function startTest() {
   entryEl.focus();
   setControlsDisabled(true);
   setAppState('running');
+  startBtn.textContent = 'Stop';
+  startBtn.classList.add('stop');
   resultsEl.classList.remove('show');
   statusEl.textContent = mode === 'header' ? 'Type the header exactly as shown.' : mode === 'trainer' ? 'Trainer run in progress. Keep moving.' : 'Formal test in progress.';
   if (mode === 'header') {
@@ -340,29 +337,38 @@ function headerInputCheck() {
   if (!source.length) return;
   if (typed === source) { endTest('complete'); return; }
 
-  // Allow the run to end once the entry is essentially complete, even with a
-  // small misspelling or two, instead of requiring a character-perfect match.
-  const tolerance = Math.max(2, Math.round(source.length * 0.08));
-  const nearEnd = typed.length >= source.length - tolerance;
-  if (!nearEnd) return;
+  // Tolerance for the fast path: a handful of typos in an otherwise
+  // full-length entry ends the run immediately.
+  const typoTolerance = Math.max(2, Math.round(source.length * 0.08));
+  // Tolerance for treating a *short* entry as finished: only ever a character
+  // or two, so normal mid-passage typing is never mistaken for "done".
+  const undershootAllowance = Math.min(2, Math.max(1, Math.round(source.length * 0.02)));
 
-  const distance = levenshtein(typed, source);
-  if (distance <= tolerance || typed.length >= source.length + tolerance) {
-    endTest('complete');
+  if (typed.length >= source.length) {
+    const distance = levenshtein(typed, source);
+    if (distance <= typoTolerance) { endTest('complete'); return; }
+    // More mistakes than the fast path allows, but the full length has been
+    // typed. Treat a short pause as "finished" instead of waiting forever.
+    headerIdleTimer = setTimeout(() => {
+      headerIdleTimer = null;
+      if (running && mode === 'header' && normalizeForScoring(entryEl.value).length >= source.length) {
+        endTest('complete');
+      }
+    }, 900);
     return;
   }
 
-  // The entry has reached the expected length but has more mistakes than the
-  // instant-match tolerance allows. Rather than wait forever for a cleaner
-  // match that will never come, treat a short pause here as "finished typing"
-  // so the run always ends on its own.
-  headerIdleTimer = setTimeout(() => {
-    headerIdleTimer = null;
-    if (!running || mode !== 'header') return;
-    if (normalizeForScoring(entryEl.value).length >= source.length - tolerance) {
-      endTest('complete');
-    }
-  }, 900);
+  if (typed.length >= source.length - undershootAllowance) {
+    // Within a character or two of the end (likely a single skipped
+    // character). Require a longer, unambiguous pause before ending, so this
+    // never fires while typing is still genuinely in progress.
+    headerIdleTimer = setTimeout(() => {
+      headerIdleTimer = null;
+      if (!running || mode !== 'header') return;
+      const stillClose = normalizeForScoring(entryEl.value).length >= source.length - undershootAllowance;
+      if (stillClose) endTest('complete');
+    }, 1400);
+  }
 }
 
 function setMode(next) {
@@ -386,7 +392,13 @@ entryEl.addEventListener('input', () => {
 entryEl.addEventListener('paste', e => e.preventDefault());
 entryEl.addEventListener('drop', e => e.preventDefault());
 entryEl.addEventListener('beforeinput', e => { if (!running) e.preventDefault(); });
-startBtn.addEventListener('click', startTest);
+startBtn.addEventListener('click', () => {
+  if (running) {
+    endTest('manual');
+  } else {
+    startTest();
+  }
+});
 newBtn.addEventListener('click', choosePassage);
 formalModeBtn.addEventListener('click', () => setMode('formal'));
 trainerModeBtn.addEventListener('click', () => setMode('trainer'));
@@ -415,9 +427,13 @@ copyResultsBtn.addEventListener('click', async () => {
 });
 
 document.addEventListener('keydown', e => {
-  if (e.key === 'Enter' && (e.metaKey || e.ctrlKey) && !running && !startBtn.disabled) {
+  if (e.key === 'Enter' && (e.metaKey || e.ctrlKey) && !startBtn.disabled) {
     e.preventDefault();
-    startTest();
+    if (running) {
+      endTest('manual');
+    } else {
+      startTest();
+    }
   }
 });
 
@@ -530,66 +546,6 @@ resetThresholdBtn.addEventListener('click', () => {
   thresholdWpmInput.value = settings.wpm;
   thresholdAccInput.value = settings.accuracy;
   saveSettings(settings);
-});
-
-// ---------- History ----------
-
-function formatHistoryDate(ts) {
-  return new Date(ts).toLocaleString(undefined, {
-    month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit'
-  });
-}
-
-function historyModeLabel(entry) {
-  if (entry.mode === 'formal') return 'Formal Test';
-  if (entry.mode === 'header') return 'Header Practice';
-  return entry.category ? `Trainer · ${entry.category}` : 'Typing Trainer';
-}
-
-function renderHistory() {
-  const list = loadHistory().slice().reverse();
-  histCountEl.textContent = list.length;
-
-  if (!list.length) {
-    histAvgWpmEl.textContent = '—';
-    histAvgAccEl.textContent = '—';
-    histPassRateEl.textContent = '—';
-    historyListEl.innerHTML = '<p class="history-empty">No runs saved yet. Finish a test to start building history.</p>';
-    return;
-  }
-
-  const avgWpm = list.reduce((sum, r) => sum + r.grossWpm, 0) / list.length;
-  const avgAcc = list.reduce((sum, r) => sum + r.accuracy, 0) / list.length;
-  const passCount = list.filter(r => r.pass).length;
-  histAvgWpmEl.textContent = avgWpm.toFixed(1);
-  histAvgAccEl.textContent = avgAcc.toFixed(1) + '%';
-  histPassRateEl.textContent = Math.round((passCount / list.length) * 100) + '%';
-
-  historyListEl.innerHTML = list.map(r => `
-    <div class="history-row">
-      <span class="history-date">${escapeHtml(formatHistoryDate(r.ts))}</span>
-      <span class="history-mode">${escapeHtml(historyModeLabel(r))}</span>
-      <span class="history-wpm">${r.grossWpm.toFixed(1)} WPM</span>
-      <span class="history-acc">${r.accuracy.toFixed(1)}%</span>
-      <span class="history-result ${r.pass ? 'pass' : 'fail'}">${r.pass ? 'PASS' : 'NOT YET'}</span>
-    </div>
-  `).join('');
-}
-
-function setHistoryOpen(open) {
-  practiceViewEl.hidden = open;
-  historyViewEl.hidden = !open;
-  setControlsDisabled(open);
-  if (open) renderHistory();
-}
-
-historyBtn.addEventListener('click', () => { if (!running) setHistoryOpen(true); });
-closeHistoryBtn.addEventListener('click', () => setHistoryOpen(false));
-clearHistoryBtn.addEventListener('click', () => {
-  if (confirm('Clear all saved practice history? This cannot be undone.')) {
-    saveHistory([]);
-    renderHistory();
-  }
 });
 
 // Initial state.
