@@ -27,9 +27,71 @@ const sourceHeader = $('sourceHeader');
 const durationSelect = $('trainerDuration');
 const appEl = $('app');
 const copyResultsBtn = $('copyResults');
+const reviewErrorsBtn = $('reviewErrors');
+const errorReviewEl = $('errorReview');
+const historyBtn = $('historyBtn');
+const settingsBtn = $('settingsBtn');
+const settingsBar = $('settingsBar');
+const thresholdWpmInput = $('thresholdWpm');
+const thresholdAccInput = $('thresholdAcc');
+const resetThresholdBtn = $('resetThreshold');
+const practiceViewEl = $('practiceView');
+const historyViewEl = $('historyView');
+const closeHistoryBtn = $('closeHistory');
+const clearHistoryBtn = $('clearHistory');
+const historyListEl = $('historyList');
+const histCountEl = $('histCount');
+const histAvgWpmEl = $('histAvgWpm');
+const histAvgAccEl = $('histAvgAcc');
+const histPassRateEl = $('histPassRate');
 
 function setAppState(state) {
   appEl.dataset.state = state;
+}
+
+const DEFAULT_SETTINGS = { wpm: 40, accuracy: 95 };
+const SETTINGS_KEY = 'criticall.settings';
+const HISTORY_KEY = 'criticall.history';
+const HISTORY_LIMIT = 500;
+
+function loadSettings() {
+  try {
+    const raw = localStorage.getItem(SETTINGS_KEY);
+    if (!raw) return { ...DEFAULT_SETTINGS };
+    const parsed = JSON.parse(raw);
+    return {
+      wpm: Number.isFinite(parsed.wpm) ? parsed.wpm : DEFAULT_SETTINGS.wpm,
+      accuracy: Number.isFinite(parsed.accuracy) ? parsed.accuracy : DEFAULT_SETTINGS.accuracy
+    };
+  } catch {
+    return { ...DEFAULT_SETTINGS };
+  }
+}
+
+function saveSettings(next) {
+  try { localStorage.setItem(SETTINGS_KEY, JSON.stringify(next)); } catch { /* storage unavailable */ }
+}
+
+let settings = loadSettings();
+
+function loadHistory() {
+  try {
+    const raw = localStorage.getItem(HISTORY_KEY);
+    const parsed = raw ? JSON.parse(raw) : [];
+    return Array.isArray(parsed) ? parsed : [];
+  } catch {
+    return [];
+  }
+}
+
+function saveHistory(list) {
+  try { localStorage.setItem(HISTORY_KEY, JSON.stringify(list.slice(-HISTORY_LIMIT))); } catch { /* storage unavailable */ }
+}
+
+function addHistoryEntry(entry) {
+  const list = loadHistory();
+  list.push(entry);
+  saveHistory(list);
 }
 
 let mode = 'formal';
@@ -85,6 +147,8 @@ function setControlsDisabled(disabled) {
   trainerModeBtn.disabled = disabled;
   headerModeBtn.disabled = disabled;
   durationSelect.disabled = disabled;
+  historyBtn.disabled = disabled;
+  settingsBtn.disabled = disabled;
 }
 
 function syncSourceToTypingProgress() {
@@ -173,22 +237,35 @@ function calculateStats() {
 
 function showResults() {
   const stats = calculateStats();
-  const passed = stats.grossWpm >= 40 && stats.accuracy >= 95;
+  const passed = stats.grossWpm >= settings.wpm && stats.accuracy >= settings.accuracy;
   grossWpmEl.textContent = stats.grossWpm.toFixed(1);
   accuracyEl.textContent = stats.accuracy.toFixed(1) + '%';
   charsTypedEl.textContent = entryEl.value.length;
   runLengthEl.textContent = mode === 'header' ? `${(stats.elapsedSeconds / 60).toFixed(2)} min` : `${runSeconds / 60} min`;
   correctCharsEl.textContent = stats.correctLike;
   errorsEl.textContent = stats.distance;
-  marginEl.textContent = (stats.grossWpm >= 40 ? '+' : '') + (stats.grossWpm - 40).toFixed(1) + ' WPM';
+  marginEl.textContent = (stats.grossWpm >= settings.wpm ? '+' : '') + (stats.grossWpm - settings.wpm).toFixed(1) + ' WPM';
   passFailEl.textContent = passed ? 'PASS' : 'NOT YET';
   passFailEl.className = 'verdict-badge ' + (passed ? 'pass' : 'fail');
   resultNoteEl.textContent = mode === 'header'
     ? 'Header practice complete. No time limit; statistics are shown automatically.'
     : mode === 'trainer'
       ? `Trainer category: ${TRAINER_PASSAGES[currentIndex].category}. The timer stayed hidden during the run.`
-      : 'Formal benchmark: five minutes, 40 WPM / 95% practice threshold.';
+      : `Formal benchmark: five minutes, ${settings.wpm} WPM / ${settings.accuracy}% practice threshold.`;
   resultsEl.classList.add('show');
+  errorReviewEl.hidden = true;
+  errorReviewEl.innerHTML = '';
+  reviewErrorsBtn.textContent = 'Review errors';
+
+  addHistoryEntry({
+    ts: Date.now(),
+    mode,
+    category: mode === 'trainer' && TRAINER_PASSAGES[currentIndex] ? TRAINER_PASSAGES[currentIndex].category : null,
+    grossWpm: Number(stats.grossWpm.toFixed(1)),
+    accuracy: Number(stats.accuracy.toFixed(1)),
+    pass: passed,
+    runLength: mode === 'header' ? Number((stats.elapsedSeconds / 60).toFixed(2)) : runSeconds / 60
+  });
 }
 
 function endTest(reason = 'time') {
@@ -341,6 +418,177 @@ document.addEventListener('keydown', e => {
   if (e.key === 'Enter' && (e.metaKey || e.ctrlKey) && !running && !startBtn.disabled) {
     e.preventDefault();
     startTest();
+  }
+});
+
+// ---------- Error review (computed on demand, after a run ends) ----------
+
+function diffAlign(typed, source) {
+  const n = typed.length, m = source.length;
+  const dp = new Uint16Array((n + 1) * (m + 1));
+  const at = (i, j) => i * (m + 1) + j;
+  for (let j = 0; j <= m; j++) dp[at(0, j)] = j;
+  for (let i = 0; i <= n; i++) dp[at(i, 0)] = i;
+  for (let i = 1; i <= n; i++) {
+    const ca = typed.charCodeAt(i - 1);
+    for (let j = 1; j <= m; j++) {
+      const cost = ca === source.charCodeAt(j - 1) ? 0 : 1;
+      const diag = dp[at(i - 1, j - 1)] + cost;
+      const del = dp[at(i - 1, j)] + 1;
+      const ins = dp[at(i, j - 1)] + 1;
+      dp[at(i, j)] = Math.min(diag, del, ins);
+    }
+  }
+  const ops = [];
+  let i = n, j = m;
+  while (i > 0 || j > 0) {
+    const cur = dp[at(i, j)];
+    if (i > 0 && j > 0 && typed[i - 1] === source[j - 1] && cur === dp[at(i - 1, j - 1)]) {
+      ops.push({ type: 'match', ch: source[j - 1] }); i--; j--;
+    } else if (i > 0 && j > 0 && cur === dp[at(i - 1, j - 1)] + 1) {
+      ops.push({ type: 'sub', typed: typed[i - 1], source: source[j - 1] }); i--; j--;
+    } else if (j > 0 && cur === dp[at(i, j - 1)] + 1) {
+      ops.push({ type: 'miss', source: source[j - 1] }); j--;
+    } else if (i > 0 && cur === dp[at(i - 1, j)] + 1) {
+      ops.push({ type: 'extra', typed: typed[i - 1] }); i--;
+    } else {
+      break;
+    }
+  }
+  ops.reverse();
+  return ops;
+}
+
+function escapeHtml(str) {
+  return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+}
+
+function buildDiffHtml(typed, source) {
+  if (!source.length) return '<p class="diff-empty">No source available to compare.</p>';
+  if (!typed.length) return '<p class="diff-empty">Nothing was typed during this run.</p>';
+  const ops = diffAlign(typed, source);
+  let body = '';
+  for (const op of ops) {
+    if (op.type === 'match') {
+      body += escapeHtml(op.ch);
+    } else if (op.type === 'sub') {
+      const shown = op.typed === '\n' ? '↵' : op.typed;
+      body += `<span class="diff-sub" title="you typed: ${escapeHtml(shown)}">${escapeHtml(op.source)}</span>`;
+    } else if (op.type === 'miss') {
+      body += `<span class="diff-miss">${escapeHtml(op.source)}</span>`;
+    } else if (op.type === 'extra') {
+      const shown = op.typed === '\n' ? '↵' : op.typed;
+      body += `<span class="diff-extra">${escapeHtml(shown)}</span>`;
+    }
+  }
+  return (
+    '<div class="diff-legend">' +
+      '<span class="diff-sub">wrong</span>' +
+      '<span class="diff-miss">skipped</span>' +
+      '<span class="diff-extra">extra</span>' +
+    '</div>' +
+    `<div class="diff-text">${body}</div>`
+  );
+}
+
+reviewErrorsBtn.addEventListener('click', () => {
+  if (errorReviewEl.hidden) {
+    const typed = normalizeForScoring(entryEl.value);
+    const source = normalizeForScoring(currentText());
+    errorReviewEl.innerHTML = buildDiffHtml(typed, source);
+    errorReviewEl.hidden = false;
+    reviewErrorsBtn.textContent = 'Hide review';
+  } else {
+    errorReviewEl.hidden = true;
+    reviewErrorsBtn.textContent = 'Review errors';
+  }
+});
+
+// ---------- Settings (adjustable pass threshold) ----------
+
+thresholdWpmInput.value = settings.wpm;
+thresholdAccInput.value = settings.accuracy;
+
+settingsBtn.addEventListener('click', () => settingsBar.classList.toggle('show'));
+
+thresholdWpmInput.addEventListener('change', () => {
+  const v = Number(thresholdWpmInput.value);
+  if (Number.isFinite(v) && v >= 0) settings.wpm = v;
+  thresholdWpmInput.value = settings.wpm;
+  saveSettings(settings);
+});
+
+thresholdAccInput.addEventListener('change', () => {
+  const v = Number(thresholdAccInput.value);
+  if (Number.isFinite(v) && v >= 0 && v <= 100) settings.accuracy = v;
+  thresholdAccInput.value = settings.accuracy;
+  saveSettings(settings);
+});
+
+resetThresholdBtn.addEventListener('click', () => {
+  settings = { ...DEFAULT_SETTINGS };
+  thresholdWpmInput.value = settings.wpm;
+  thresholdAccInput.value = settings.accuracy;
+  saveSettings(settings);
+});
+
+// ---------- History ----------
+
+function formatHistoryDate(ts) {
+  return new Date(ts).toLocaleString(undefined, {
+    month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit'
+  });
+}
+
+function historyModeLabel(entry) {
+  if (entry.mode === 'formal') return 'Formal Test';
+  if (entry.mode === 'header') return 'Header Practice';
+  return entry.category ? `Trainer · ${entry.category}` : 'Typing Trainer';
+}
+
+function renderHistory() {
+  const list = loadHistory().slice().reverse();
+  histCountEl.textContent = list.length;
+
+  if (!list.length) {
+    histAvgWpmEl.textContent = '—';
+    histAvgAccEl.textContent = '—';
+    histPassRateEl.textContent = '—';
+    historyListEl.innerHTML = '<p class="history-empty">No runs saved yet. Finish a test to start building history.</p>';
+    return;
+  }
+
+  const avgWpm = list.reduce((sum, r) => sum + r.grossWpm, 0) / list.length;
+  const avgAcc = list.reduce((sum, r) => sum + r.accuracy, 0) / list.length;
+  const passCount = list.filter(r => r.pass).length;
+  histAvgWpmEl.textContent = avgWpm.toFixed(1);
+  histAvgAccEl.textContent = avgAcc.toFixed(1) + '%';
+  histPassRateEl.textContent = Math.round((passCount / list.length) * 100) + '%';
+
+  historyListEl.innerHTML = list.map(r => `
+    <div class="history-row">
+      <span class="history-date">${escapeHtml(formatHistoryDate(r.ts))}</span>
+      <span class="history-mode">${escapeHtml(historyModeLabel(r))}</span>
+      <span class="history-wpm">${r.grossWpm.toFixed(1)} WPM</span>
+      <span class="history-acc">${r.accuracy.toFixed(1)}%</span>
+      <span class="history-result ${r.pass ? 'pass' : 'fail'}">${r.pass ? 'PASS' : 'NOT YET'}</span>
+    </div>
+  `).join('');
+}
+
+function setHistoryOpen(open) {
+  practiceViewEl.hidden = open;
+  historyViewEl.hidden = !open;
+  setControlsDisabled(open);
+  if (open) renderHistory();
+}
+
+historyBtn.addEventListener('click', () => { if (!running) setHistoryOpen(true); });
+closeHistoryBtn.addEventListener('click', () => setHistoryOpen(false));
+clearHistoryBtn.addEventListener('click', () => {
+  if (confirm('Clear all saved practice history? This cannot be undone.')) {
+    saveHistory([]);
+    renderHistory();
   }
 });
 
