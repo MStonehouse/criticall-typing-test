@@ -1,5 +1,13 @@
-const FORMAL_SECONDS = 300;
-const TRAINER_DURATIONS = [120, 180, 240, 300];
+// CritiCall typing practice.
+//
+// Two modes:
+//   test   - five-minute transcription test, pass at 40 WPM AND 95% accuracy
+//   header - untimed header practice; ends automatically when the header is typed
+// Both use passages built by generator.js at the selected difficulty.
+
+const TEST_SECONDS = 300;
+const PASS_WPM = 40;
+const PASS_ACCURACY = 95;
 
 const $ = id => document.getElementById(id);
 const sourceEl = $('sourceLetter');
@@ -18,107 +26,99 @@ const correctCharsEl = $('correctChars');
 const errorsEl = $('errors');
 const marginEl = $('margin');
 const resultNoteEl = $('resultNote');
-const formalModeBtn = $('formalMode');
-const trainerModeBtn = $('trainerMode');
+const testModeBtn = $('testMode');
 const headerModeBtn = $('headerMode');
-const trainerStrip = $('trainerStrip');
-const categoryBadge = $('categoryBadge');
+const levelBtns = Array.from(document.querySelectorAll('.level-switch .level'));
+const levelBadge = $('levelBadge');
+const kindBadge = $('kindBadge');
+const infoText = $('infoText');
 const sourceHeader = $('sourceHeader');
-const durationSelect = $('trainerDuration');
+const timerToggleBtn = $('timerToggle');
 const appEl = $('app');
 const copyResultsBtn = $('copyResults');
 const reviewErrorsBtn = $('reviewErrors');
 const errorReviewEl = $('errorReview');
-const settingsBtn = $('settingsBtn');
-const settingsBar = $('settingsBar');
-const thresholdWpmInput = $('thresholdWpm');
-const thresholdAccInput = $('thresholdAcc');
-const resetThresholdBtn = $('resetThreshold');
 
 function setAppState(state) {
   appEl.dataset.state = state;
 }
 
-const DEFAULT_SETTINGS = { wpm: 40, accuracy: 95 };
-const SETTINGS_KEY = 'criticall.settings';
-const HISTORY_KEY = 'criticall.history';
-const HISTORY_LIMIT = 500;
+// ---------- Saved preferences, history and recently seen scenarios ----------
 
-function loadSettings() {
+const PREFS_KEY = 'criticall.prefs';
+const HISTORY_KEY = 'criticall.history';
+const RECENT_KEY = 'criticall.recentScenarios';
+const HISTORY_LIMIT = 500;
+// Scenarios seen recently are skipped so subjects don't come back too soon.
+// There are 80 scenarios; skipping the last 50 keeps rotation varied.
+const RECENT_LIMIT = Math.min(50, Math.max(0, (PassageGen.scenarioCount || 0) - 10));
+
+function readJson(key, fallback) {
   try {
-    const raw = localStorage.getItem(SETTINGS_KEY);
-    if (!raw) return { ...DEFAULT_SETTINGS };
-    const parsed = JSON.parse(raw);
-    return {
-      wpm: Number.isFinite(parsed.wpm) ? parsed.wpm : DEFAULT_SETTINGS.wpm,
-      accuracy: Number.isFinite(parsed.accuracy) ? parsed.accuracy : DEFAULT_SETTINGS.accuracy
-    };
+    const raw = localStorage.getItem(key);
+    return raw ? JSON.parse(raw) : fallback;
   } catch {
-    return { ...DEFAULT_SETTINGS };
+    return fallback;
   }
 }
 
-function saveSettings(next) {
-  try { localStorage.setItem(SETTINGS_KEY, JSON.stringify(next)); } catch { /* storage unavailable */ }
+function writeJson(key, value) {
+  try { localStorage.setItem(key, JSON.stringify(value)); } catch { /* storage unavailable */ }
 }
 
-let settings = loadSettings();
+function loadPrefs() {
+  const p = readJson(PREFS_KEY, {}) || {};
+  const validLevel = [1, 2, 3, 4, 'mixed'].includes(p.level) ? p.level : 1;
+  return { level: validLevel, showTimer: p.showTimer !== false };
+}
+
+let prefs = loadPrefs();
+
+function savePrefs() {
+  writeJson(PREFS_KEY, prefs);
+}
 
 function loadHistory() {
-  try {
-    const raw = localStorage.getItem(HISTORY_KEY);
-    const parsed = raw ? JSON.parse(raw) : [];
-    return Array.isArray(parsed) ? parsed : [];
-  } catch {
-    return [];
-  }
-}
-
-function saveHistory(list) {
-  try { localStorage.setItem(HISTORY_KEY, JSON.stringify(list.slice(-HISTORY_LIMIT))); } catch { /* storage unavailable */ }
+  const list = readJson(HISTORY_KEY, []);
+  return Array.isArray(list) ? list : [];
 }
 
 function addHistoryEntry(entry) {
   const list = loadHistory();
   list.push(entry);
-  saveHistory(list);
+  writeJson(HISTORY_KEY, list.slice(-HISTORY_LIMIT));
 }
 
-let mode = 'formal';
-let currentIndex = -1;
-let deck = [];
-let runSeconds = FORMAL_SECONDS;
-let remaining = FORMAL_SECONDS;
+function recentScenarios() {
+  const list = readJson(RECENT_KEY, []);
+  return Array.isArray(list) ? list : [];
+}
+
+function rememberScenario(id) {
+  if (!id) return;
+  const list = recentScenarios().filter(x => x !== id);
+  list.push(id);
+  writeJson(RECENT_KEY, list.slice(-RECENT_LIMIT));
+}
+
+// ---------- Run state ----------
+
+let mode = 'test';
+let passage = null; // { text, level, levelName, kind, scenarioId, title }
+let runSeconds = TEST_SECONDS;
+let remaining = TEST_SECONDS;
 let interval = null;
 let running = false;
 let startedAt = null;
+let endReason = null;
 
-function pool() {
-  if (mode === 'formal') return LETTERS;
-  if (mode === 'trainer') return TRAINER_PASSAGES;
-  return HEADER_PRACTICE;
-}
-
-function textFromItem(item) {
-  if (typeof item === 'string') return item;
-  return item && typeof item.text === 'string' ? item.text : '';
-}
+const KIND_LABELS = {
+  letter: 'Letter', email: 'Email', memo: 'Memo', report: 'Report',
+  notice: 'Public Notice', article: 'Newsletter Article', record: 'Address Record'
+};
 
 function currentText() {
-  const p = pool();
-  return currentIndex >= 0 && currentIndex < p.length ? textFromItem(p[currentIndex]) : '';
-}
-
-function refillDeck() {
-  const p = pool();
-  deck = Array.from({ length: p.length }, (_, i) => i);
-  for (let i = deck.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [deck[i], deck[j]] = [deck[j], deck[i]];
-  }
-  if (deck.length > 1 && deck[deck.length - 1] === currentIndex) {
-    [deck[0], deck[deck.length - 1]] = [deck[deck.length - 1], deck[0]];
-  }
+  return passage ? passage.text : '';
 }
 
 function normalizeForScoring(text) {
@@ -132,13 +132,12 @@ function formatTime(total) {
 
 function setControlsDisabled(disabled) {
   newBtn.disabled = disabled;
-  formalModeBtn.disabled = disabled;
-  trainerModeBtn.disabled = disabled;
+  testModeBtn.disabled = disabled;
   headerModeBtn.disabled = disabled;
-  durationSelect.disabled = disabled;
-  settingsBtn.disabled = disabled;
+  levelBtns.forEach(b => { b.disabled = disabled; });
 }
 
+// Keeps the source text in view by scrolling it in step with typing progress.
 function syncSourceToTypingProgress() {
   if (!running) return;
   const source = currentText();
@@ -149,45 +148,78 @@ function syncSourceToTypingProgress() {
   sourceEl.scrollTo({ top: max * progress - sourceEl.clientHeight * 0.18, behavior: 'smooth' });
 }
 
-function choosePassage() {
-  if (running) return;
-  const p = pool();
-  if (!p.length) {
-    currentIndex = -1;
-    sourceEl.textContent = '';
-    statusEl.textContent = 'No passages are available for this mode.';
+// ---------- Timer display ----------
+
+function renderTimerIdle() {
+  if (mode === 'header') {
+    timerEl.textContent = 'NO LIMIT';
+    timerEl.classList.remove('hidden');
     return;
   }
-  if (!deck.length) refillDeck();
-  currentIndex = deck.pop();
+  timerEl.textContent = formatTime(TEST_SECONDS);
+  timerEl.classList.remove('hidden');
+}
+
+function renderTimerRunning() {
+  if (mode === 'header') {
+    timerEl.textContent = 'NO LIMIT';
+    timerEl.classList.remove('hidden');
+  } else if (prefs.showTimer) {
+    timerEl.textContent = formatTime(remaining);
+    timerEl.classList.remove('hidden');
+  } else {
+    timerEl.textContent = 'TIME HIDDEN';
+    timerEl.classList.add('hidden');
+  }
+}
+
+function renderTimerToggle() {
+  timerToggleBtn.textContent = prefs.showTimer ? 'Timer: Shown' : 'Timer: Hidden';
+  timerToggleBtn.setAttribute('aria-pressed', String(prefs.showTimer));
+}
+
+// ---------- Passage selection ----------
+
+function renderLevelButtons() {
+  levelBtns.forEach(b => {
+    const v = b.dataset.level === 'mixed' ? 'mixed' : Number(b.dataset.level);
+    b.classList.toggle('active', v === prefs.level);
+    b.setAttribute('aria-pressed', String(v === prefs.level));
+  });
+}
+
+function renderInfoStrip() {
+  if (!passage) return;
+  levelBadge.textContent = prefs.level === 'mixed' ? `Mixed · ${passage.levelName}` : passage.levelName;
+  levelBadge.dataset.level = String(passage.level);
+  kindBadge.textContent = KIND_LABELS[passage.kind] || 'Passage';
+  infoText.textContent = mode === 'header'
+    ? 'Untimed · ends automatically when the header is complete'
+    : `Five minutes · pass at ${PASS_WPM} WPM and ${PASS_ACCURACY}% accuracy`;
+}
+
+function choosePassage() {
+  if (running) return;
+  const opts = { level: prefs.level, avoid: recentScenarios() };
+  passage = mode === 'header' ? PassageGen.generateHeader(opts) : PassageGen.generate(opts);
+  rememberScenario(passage.scenarioId);
+
   sourceEl.textContent = currentText();
   sourceEl.scrollTop = 0;
   entryEl.value = '';
   resultsEl.classList.remove('show');
   passFailEl.className = 'verdict-badge';
+  errorReviewEl.hidden = true;
   setAppState('idle');
-
-  if (mode === 'formal') {
-    runSeconds = FORMAL_SECONDS;
-    timerEl.textContent = formatTime(FORMAL_SECONDS);
-    timerEl.classList.remove('hidden');
-    categoryBadge.textContent = 'Formal';
-    statusEl.textContent = `Choose Start when ready. ${p.length} formal letters available.`;
-  } else if (mode === 'trainer') {
-    runSeconds = Number(durationSelect.value);
-    timerEl.textContent = 'TIME HIDDEN';
-    timerEl.classList.add('hidden');
-    const item = p[currentIndex];
-    categoryBadge.textContent = item && item.category ? item.category : 'Mixed';
-    statusEl.textContent = `Choose Start when ready. ${p.length} trainer passages available.`;
-  } else {
-    runSeconds = 0;
-    timerEl.textContent = 'NO LIMIT';
-    timerEl.classList.remove('hidden');
-    categoryBadge.textContent = 'Header';
-    statusEl.textContent = `Choose Start when ready. ${p.length} header records available.`;
-  }
+  runSeconds = mode === 'header' ? 0 : TEST_SECONDS;
+  renderTimerIdle();
+  renderInfoStrip();
+  statusEl.textContent = mode === 'header'
+    ? 'Choose Start when ready. Type the header exactly as shown.'
+    : 'Choose Start when ready. You will have five minutes.';
 }
+
+// ---------- Scoring ----------
 
 function levenshtein(a, b) {
   const n = a.length, m = b.length;
@@ -216,30 +248,60 @@ function calculateStats() {
   const accuracy = typed.length ? Math.max(0, Math.min(100, (correctLike / typed.length) * 100)) : 0;
   // Actual elapsed time, not the nominal run length: this stays correct whether
   // the run finished naturally, hit its timer, or was stopped early by hand.
-  const elapsedSeconds = Math.max(1, (Date.now() - startedAt) / 1000);
+  const elapsedSeconds = Math.max(1, Math.min(
+    mode === 'test' ? TEST_SECONDS : Infinity,
+    (Date.now() - startedAt) / 1000
+  ));
   const elapsedMinutes = elapsedSeconds / 60;
   const charsTyped = typed.replace(/\n/g, '').length;
   const grossWpm = (charsTyped / 5) / elapsedMinutes;
   return { typed, source, distance, correctLike, accuracy, elapsedSeconds, grossWpm };
 }
 
+function signed(n, digits = 1) {
+  return (n >= 0 ? '+' : '') + n.toFixed(digits);
+}
+
 function showResults() {
   const stats = calculateStats();
-  const passed = stats.grossWpm >= settings.wpm && stats.accuracy >= settings.accuracy;
+  const speedOk = stats.grossWpm >= PASS_WPM;
+  const accuracyOk = stats.accuracy >= PASS_ACCURACY;
+  // A test only counts as a pass if it ran the full five minutes.
+  const fullRun = mode === 'header' || endReason === 'time';
+  const passed = speedOk && accuracyOk && fullRun;
+
   grossWpmEl.textContent = stats.grossWpm.toFixed(1);
   accuracyEl.textContent = stats.accuracy.toFixed(1) + '%';
+  grossWpmEl.classList.toggle('below', !speedOk);
+  accuracyEl.classList.toggle('below', !accuracyOk);
   charsTypedEl.textContent = entryEl.value.length;
-  runLengthEl.textContent = `${(stats.elapsedSeconds / 60).toFixed(2)} min`;
+  runLengthEl.textContent = formatTime(stats.elapsedSeconds);
   correctCharsEl.textContent = stats.correctLike;
   errorsEl.textContent = stats.distance;
-  marginEl.textContent = (stats.grossWpm >= settings.wpm ? '+' : '') + (stats.grossWpm - settings.wpm).toFixed(1) + ' WPM';
-  passFailEl.textContent = passed ? 'PASS' : 'NOT YET';
+  marginEl.textContent = `${signed(stats.grossWpm - PASS_WPM)} WPM · ${signed(stats.accuracy - PASS_ACCURACY)}% accuracy`;
+
+  let verdict;
+  if (passed) verdict = 'PASS';
+  else if (!fullRun) verdict = 'INCOMPLETE';
+  else verdict = 'NOT YET';
+  passFailEl.textContent = verdict;
   passFailEl.className = 'verdict-badge ' + (passed ? 'pass' : 'fail');
-  resultNoteEl.textContent = mode === 'header'
-    ? 'Header practice complete. No time limit; statistics are shown automatically.'
-    : mode === 'trainer'
-      ? `Trainer category: ${TRAINER_PASSAGES[currentIndex].category}. The timer stayed hidden during the run.`
-      : `Formal benchmark: five minutes, ${settings.wpm} WPM / ${settings.accuracy}% practice threshold.`;
+
+  const misses = [];
+  if (!speedOk) misses.push(`speed is ${(PASS_WPM - stats.grossWpm).toFixed(1)} WPM short of ${PASS_WPM}`);
+  if (!accuracyOk) misses.push(`accuracy is ${(PASS_ACCURACY - stats.accuracy).toFixed(1)} points short of ${PASS_ACCURACY}%`);
+  const levelLabel = `${passage.levelName} ${(KIND_LABELS[passage.kind] || 'passage').toLowerCase()}`;
+  if (mode === 'header') {
+    resultNoteEl.textContent = `Header practice (${passage.levelName}). ` +
+      (misses.length ? `To pass: ${misses.join('; ')}.` : 'Both targets met.');
+  } else if (!fullRun) {
+    resultNoteEl.textContent = `Stopped at ${formatTime(stats.elapsedSeconds)}. A pass requires the full five minutes at ${PASS_WPM} WPM and ${PASS_ACCURACY}% accuracy. Scores above are for the time you typed.`;
+  } else {
+    resultNoteEl.textContent = `${levelLabel}: ` + (misses.length
+      ? `not yet — ${misses.join('; ')}.`
+      : `passed both targets (${PASS_WPM} WPM and ${PASS_ACCURACY}% accuracy).`);
+  }
+
   resultsEl.classList.add('show');
   errorReviewEl.hidden = true;
   errorReviewEl.innerHTML = '';
@@ -248,17 +310,23 @@ function showResults() {
   addHistoryEntry({
     ts: Date.now(),
     mode,
-    category: mode === 'trainer' && TRAINER_PASSAGES[currentIndex] ? TRAINER_PASSAGES[currentIndex].category : null,
+    level: passage.level,
+    levelName: passage.levelName,
+    kind: passage.kind,
     grossWpm: Number(stats.grossWpm.toFixed(1)),
     accuracy: Number(stats.accuracy.toFixed(1)),
     pass: passed,
+    complete: fullRun,
     runLength: Number((stats.elapsedSeconds / 60).toFixed(2))
   });
 }
 
+// ---------- Run lifecycle ----------
+
 function endTest(reason = 'time') {
   if (!running) return;
   clearHeaderIdleTimer();
+  endReason = reason;
   running = false;
   if (interval) clearInterval(interval);
   interval = null;
@@ -268,57 +336,49 @@ function endTest(reason = 'time') {
   startBtn.textContent = 'Start';
   startBtn.classList.remove('stop');
   showResults();
+  timerEl.classList.remove('hidden');
   if (mode === 'header') {
     timerEl.textContent = reason === 'manual' ? 'STOPPED' : 'COMPLETE';
     statusEl.textContent = reason === 'manual'
       ? 'Stopped early. Statistics are shown below.'
       : 'Header complete. Statistics are shown below.';
-  } else if (reason === 'complete') {
-    statusEl.textContent = 'Passage complete. Statistics are shown below.';
-    timerEl.textContent = formatTime(remaining);
   } else if (reason === 'manual') {
     statusEl.textContent = 'Stopped early. Statistics are shown below.';
-    timerEl.textContent = mode === 'trainer' ? 'STOPPED' : formatTime(remaining);
+    timerEl.textContent = formatTime(remaining);
   } else {
-    statusEl.textContent = mode === 'trainer' ? 'Run complete. Nice work—go again when ready.' : 'Time expired. Test complete.';
+    statusEl.textContent = 'Time expired. Test complete.';
     timerEl.textContent = formatTime(0);
   }
-  if (mode === 'trainer') timerEl.classList.add('hidden');
 }
 
 function startTest() {
   if (running || !currentText()) return;
   clearHeaderIdleTimer();
   running = true;
+  endReason = null;
   startedAt = Date.now();
   remaining = runSeconds;
   entryEl.value = '';
   entryEl.disabled = false;
   entryEl.focus();
+  sourceEl.scrollTop = 0;
   setControlsDisabled(true);
   setAppState('running');
   startBtn.textContent = 'Stop';
   startBtn.classList.add('stop');
   resultsEl.classList.remove('show');
-  statusEl.textContent = mode === 'header' ? 'Type the header exactly as shown.' : mode === 'trainer' ? 'Trainer run in progress. Keep moving.' : 'Formal test in progress.';
-  if (mode === 'header') {
-    timerEl.textContent = 'NO LIMIT';
-    timerEl.classList.remove('hidden');
-    return;
-  }
-  if (mode === 'trainer') {
-    timerEl.textContent = 'TIME HIDDEN';
-    timerEl.classList.add('hidden');
-  } else {
-    timerEl.textContent = formatTime(remaining);
-  }
+  statusEl.textContent = mode === 'header' ? 'Type the header exactly as shown.' : 'Test in progress.';
+  renderTimerRunning();
+  if (mode === 'header') return;
   interval = setInterval(() => {
     const elapsed = Math.floor((Date.now() - startedAt) / 1000);
     remaining = Math.max(0, runSeconds - elapsed);
-    if (mode === 'formal') timerEl.textContent = formatTime(remaining);
+    renderTimerRunning();
     if (remaining <= 0) endTest('time');
   }, 250);
 }
+
+// ---------- Header practice auto-finish ----------
 
 let headerIdleTimer = null;
 
@@ -371,19 +431,26 @@ function headerInputCheck() {
   }
 }
 
+// ---------- Mode and difficulty ----------
+
 function setMode(next) {
   if (running || mode === next) return;
   mode = next;
-  currentIndex = -1;
-  deck = [];
-  formalModeBtn.classList.toggle('active', mode === 'formal');
-  trainerModeBtn.classList.toggle('active', mode === 'trainer');
+  testModeBtn.classList.toggle('active', mode === 'test');
   headerModeBtn.classList.toggle('active', mode === 'header');
-  trainerStrip.classList.toggle('show', mode !== 'formal');
-  sourceHeader.textContent = mode === 'formal' ? 'Source Letter' : mode === 'trainer' ? 'Practice Passage' : 'Header';
-  durationSelect.classList.toggle('show', mode === 'trainer');
+  sourceHeader.textContent = mode === 'test' ? 'Source Passage' : 'Header';
   choosePassage();
 }
+
+function setLevel(next) {
+  if (running) return;
+  prefs.level = next;
+  savePrefs();
+  renderLevelButtons();
+  choosePassage();
+}
+
+// ---------- Events ----------
 
 entryEl.addEventListener('input', () => {
   syncSourceToTypingProgress();
@@ -400,21 +467,29 @@ startBtn.addEventListener('click', () => {
   }
 });
 newBtn.addEventListener('click', choosePassage);
-formalModeBtn.addEventListener('click', () => setMode('formal'));
-trainerModeBtn.addEventListener('click', () => setMode('trainer'));
+testModeBtn.addEventListener('click', () => setMode('test'));
 headerModeBtn.addEventListener('click', () => setMode('header'));
-durationSelect.addEventListener('change', () => { if (mode === 'trainer' && !running) choosePassage(); });
+levelBtns.forEach(b => b.addEventListener('click', () => {
+  setLevel(b.dataset.level === 'mixed' ? 'mixed' : Number(b.dataset.level));
+}));
+timerToggleBtn.addEventListener('click', () => {
+  prefs.showTimer = !prefs.showTimer;
+  savePrefs();
+  renderTimerToggle();
+  if (running) renderTimerRunning();
+});
 
 copyResultsBtn.addEventListener('click', async () => {
   const summary = [
     `CritiCall Typing Practice — ${passFailEl.textContent}`,
+    `Mode: ${mode === 'header' ? 'Header Practice' : '5-Minute Test'} (${passage ? passage.levelName : ''})`,
     `Gross WPM: ${grossWpmEl.textContent}`,
     `Accuracy: ${accuracyEl.textContent}`,
     `Characters Typed: ${charsTypedEl.textContent}`,
     `Run Length: ${runLengthEl.textContent}`,
     `Correct-like Chars: ${correctCharsEl.textContent}`,
     `Errors: ${errorsEl.textContent}`,
-    `Passing Margin: ${marginEl.textContent}`
+    `Against target: ${marginEl.textContent}`
   ].join('\n');
   const original = copyResultsBtn.textContent;
   try {
@@ -476,7 +551,7 @@ function diffAlign(typed, source) {
 }
 
 function escapeHtml(str) {
-  return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 }
 
 function buildDiffHtml(typed, source) {
@@ -510,8 +585,11 @@ function buildDiffHtml(typed, source) {
 reviewErrorsBtn.addEventListener('click', () => {
   if (errorReviewEl.hidden) {
     const typed = normalizeForScoring(entryEl.value);
-    const source = normalizeForScoring(currentText());
-    errorReviewEl.innerHTML = buildDiffHtml(typed, source);
+    // Compare against only the part of the source the typist reached (plus a
+    // little slack), so the untyped remainder isn't reported as "skipped".
+    const fullSource = normalizeForScoring(currentText());
+    const source = fullSource.slice(0, Math.min(fullSource.length, typed.length + 20));
+    errorReviewEl.innerHTML = buildDiffHtml(typed, trimToReached(typed, source));
     errorReviewEl.hidden = false;
     reviewErrorsBtn.textContent = 'Hide review';
   } else {
@@ -520,37 +598,26 @@ reviewErrorsBtn.addEventListener('click', () => {
   }
 });
 
-// ---------- Settings (adjustable pass threshold) ----------
+// Cut the source back to the point that best matches where typing stopped.
+function trimToReached(typed, source) {
+  if (!typed.length) return source.slice(0, 0);
+  let best = typed.length, bestScore = Infinity;
+  const tail = typed.slice(-12);
+  for (let end = Math.max(0, typed.length - 20); end <= source.length; end++) {
+    const score = levenshtein(tail, source.slice(Math.max(0, end - tail.length), end));
+    if (score < bestScore || (score === bestScore && Math.abs(end - typed.length) < Math.abs(best - typed.length))) {
+      bestScore = score;
+      best = end;
+    }
+  }
+  return source.slice(0, best);
+}
 
-thresholdWpmInput.value = settings.wpm;
-thresholdAccInput.value = settings.accuracy;
+// ---------- Initial state ----------
 
-settingsBtn.addEventListener('click', () => settingsBar.classList.toggle('show'));
-
-thresholdWpmInput.addEventListener('change', () => {
-  const v = Number(thresholdWpmInput.value);
-  if (Number.isFinite(v) && v >= 0) settings.wpm = v;
-  thresholdWpmInput.value = settings.wpm;
-  saveSettings(settings);
-});
-
-thresholdAccInput.addEventListener('change', () => {
-  const v = Number(thresholdAccInput.value);
-  if (Number.isFinite(v) && v >= 0 && v <= 100) settings.accuracy = v;
-  thresholdAccInput.value = settings.accuracy;
-  saveSettings(settings);
-});
-
-resetThresholdBtn.addEventListener('click', () => {
-  settings = { ...DEFAULT_SETTINGS };
-  thresholdWpmInput.value = settings.wpm;
-  thresholdAccInput.value = settings.accuracy;
-  saveSettings(settings);
-});
-
-// Initial state.
 entryEl.disabled = true;
 setControlsDisabled(false);
-durationSelect.classList.remove('show');
+renderLevelButtons();
+renderTimerToggle();
 setAppState('idle');
 choosePassage();

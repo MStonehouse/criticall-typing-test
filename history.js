@@ -15,7 +15,7 @@ function saveHistory(list) {
 }
 
 function escapeHtml(str) {
-  return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 }
 
 function formatHistoryDate(ts) {
@@ -25,9 +25,12 @@ function formatHistoryDate(ts) {
 }
 
 function historyModeLabel(entry) {
-  if (entry.mode === 'formal') return 'Formal Test';
-  if (entry.mode === 'header') return 'Header Practice';
-  return entry.category ? `Trainer · ${entry.category}` : 'Typing Trainer';
+  const level = entry.levelName ? ` · ${entry.levelName}` : '';
+  if (entry.mode === 'test') return `5-Minute Test${level}${entry.complete === false ? ' (stopped)' : ''}`;
+  if (entry.mode === 'header') return `Header Practice${level}`;
+  // Runs saved by earlier versions of the app.
+  if (entry.mode === 'formal') return 'Formal Test (old)';
+  return entry.category ? `Trainer · ${entry.category} (old)` : 'Typing Trainer (old)';
 }
 
 function render() {

@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta name="description" content="CritiCall-style formal typing simulator and high-volume transcription trainer.">
+<meta name="description" content="CritiCall-style five-minute transcription test with selectable difficulty and header practice.">
 <title>CritiCall Typing Practice</title>
 <link rel="stylesheet" href="styles.css">
 </head>
@@ -24,43 +24,37 @@
       </div>
       <div class="console-links">
         <a id="historyLink" class="btn-link" href="history.html" title="View saved practice history">History</a>
-        <button id="settingsBtn" title="Adjust pass threshold">Settings</button>
+        <button id="timerToggle" aria-pressed="true" title="Show or hide the countdown while typing">Timer: Shown</button>
       </div>
     </div>
 
     <div class="controls">
       <div class="mode-switch" role="group" aria-label="Practice mode">
-        <button id="formalMode" class="mode active">Formal Test</button>
-        <button id="trainerMode" class="mode">Typing Trainer</button>
+        <button id="testMode" class="mode active">5-Minute Test</button>
         <button id="headerMode" class="mode">Header Practice</button>
       </div>
-      <select id="trainerDuration" aria-label="Typing Trainer duration">
-        <option value="120">2 minutes</option>
-        <option value="180">3 minutes</option>
-        <option value="240">4 minutes</option>
-        <option value="300">5 minutes</option>
-      </select>
+      <div class="mode-switch level-switch" role="group" aria-label="Difficulty">
+        <button class="level" data-level="1" title="Plain prose with a short opening line">Easy</button>
+        <button class="level" data-level="2" title="Dated headers, sign-offs, more names and numbers">Moderate</button>
+        <button class="level" data-level="3" title="Letterheads, file numbers, Re: lines, dense details">Hard</button>
+        <button class="level" data-level="4" title="Full business headers, codes, extensions, unusual names">Expert</button>
+        <button class="level" data-level="mixed" title="A random difficulty each passage">Mixed</button>
+      </div>
       <span class="timer" id="timer">05:00</span>
       <button id="newLetter">New Passage</button>
       <button class="primary" id="start" title="Start (Ctrl/Cmd + Enter) · Stop ends the run early">Start</button>
     </div>
   </header>
 
-  <div class="settings-bar" id="settingsBar">
-    <span>Pass threshold</span>
-    <label>WPM ≥ <input type="number" id="thresholdWpm" min="0" max="200" step="1"></label>
-    <label>Accuracy % ≥ <input type="number" id="thresholdAcc" min="0" max="100" step="0.5"></label>
-    <button id="resetThreshold">Reset to 40 / 95%</button>
-  </div>
-
-  <div class="trainer-strip" id="trainerStrip">
-    <span id="categoryBadge">Mixed</span>
-    <span>Choose 2–5 minutes · timer hidden while typing</span>
+  <div class="info-strip" id="infoStrip">
+    <span class="badge" id="levelBadge">Easy</span>
+    <span class="badge subtle" id="kindBadge">Letter</span>
+    <span id="infoText">Five minutes · pass at 40 WPM and 95% accuracy</span>
   </div>
 
   <div class="test-grid">
     <section class="panel source">
-      <div class="panel-header"><span id="sourceHeader">Source Letter</span></div>
+      <div class="panel-header"><span id="sourceHeader">Source Passage</span></div>
       <div class="letter" id="sourceLetter"></div>
     </section>
     <section class="panel entry">
@@ -97,9 +91,8 @@
   </section>
 
 </div>
-<script src="letters.js"></script>
-<script src="trainer-passages.js"></script>
-<script src="header-practice.js"></script>
+<script src="scenarios.js"></script>
+<script src="generator.js"></script>
 <script src="app.js"></script>
 </body>
 </html>

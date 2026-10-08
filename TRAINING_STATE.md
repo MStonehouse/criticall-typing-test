@@ -83,3 +83,11 @@ Keep observed facts separate from caller assumptions. Preserve uncertainty and c
 
 ## Trainer corpus refresh — 2026-09-16
 Trainer passages were rebuilt as 500 long, unique, predominantly plain-English samples. Each begins with one short addressee/address line, then shifts into natural prose or lightly operational narrative. Formal Test letters were intentionally left unchanged. All trainer passages exceed 470 words so a five-minute run cannot exhaust the source at expected practice speeds.
+
+
+## Difficulty-level rebuild - 2026-10-08
+- Formal Test and Typing Trainer merged into one 5-Minute Test; trainer duration choices removed.
+- Pass mark fixed at 40 WPM and 95% accuracy; runs stopped early are recorded as incomplete.
+- Passages now generated from 80 varied scenarios at four selectable levels (Easy, Moderate, Hard, Expert) plus Mixed. Easy matches the previous trainer difficulty.
+- Header Practice kept, now with the same difficulty levels.
+- Old static libraries (letters.js, trainer-passages.js, header-practice.js) retired.

@@ -1,24 +1,25 @@
 # CritiCall Typing Practice
 
-A dependency-free CritiCall-style typing simulator plus a high-volume, informal transcription trainer.
+A dependency-free, CritiCall-style five-minute transcription test with selectable difficulty, plus untimed header practice.
 
 ## Features
 
-- 100 built-in formal practice letters (preserved as the benchmark simulator)
-- 500 long, unique trainer passages across 9 categories
-- Random 2, 3, 4, or 5 minute trainer runs
-- Trainer timer is completely hidden while typing
-- Trainer categories: Easy Flow, Formal, Dispatch Narrative, Numbers & Dates, Names & Addresses, Punctuation, Awkward Words, Email & Memo, and Mixed
-- Expanded post-run trainer statistics
-- 5-minute timed tests
-- 40 WPM / 95% practice threshold
-- No live WPM or accuracy feedback during a run
-- Character-level accuracy scoring using edit distance
-- Spellcheck, autocorrect, autocapitalization, paste, and drag/drop disabled
-- Automatic source-pane scrolling based on typing progress
-- Shuffled 100-letter deck so every letter is seen once before the pool reshuffles
-- No frameworks, packages, build tools, tracking, or external services
-- Works locally and on GitHub Pages
+- **Every test is five minutes.** Pass mark is fixed at **40 WPM and 95% accuracy**; both must be met, and a run stopped early is marked *Incomplete*.
+- **Four difficulty levels, plus Mixed:**
+  - **Easy** - plain prose with a one-line "Dear ... at ..." opener (the same level as the original practice passages).
+  - **Moderate** - dated letters, memos and emails with recipient blocks and sign-offs; fuller names, dates, dollar amounts and file numbers.
+  - **Hard** - letterheads, phone numbers, "Our File" and "Re:" lines, cc lists, company names, and dense detail sentences in the body.
+  - **Expert** - full business headers (fax, email, website, delivery method, "Your File"), unusual names, hyphenated and apostrophe surnames, long reference codes, extensions, 24-hour times and mixed date formats.
+  - **Mixed** - a random level each passage.
+- **Real variety.** Passages are generated from 80 hand-written scenarios (letters, emails, memos, incident and inspection reports, public notices and newsletter articles) across community life, workplace, customer service, public safety, municipal and health, general interest, occasions, and transport/utilities. Each scenario has two versions of every paragraph, and names, places, companies, dates and numbers are freshly generated every time. Recently seen scenarios are skipped so subjects don't repeat soon.
+- **Header Practice** at the same difficulty levels. Easy is the classic four-line record (Name / Address / City / Postal Code); higher levels are the full headers used in the tests. Untimed, and ends automatically when the header is complete.
+- The source text **scrolls slowly as you type** so your place stays in view.
+- Timer can be shown or hidden while typing (Timer button; remembered).
+- No live WPM or accuracy feedback during a run.
+- Character-level accuracy using edit distance; error review shows wrong, skipped and extra characters up to where you stopped.
+- Spellcheck, autocorrect, autocapitalisation, paste and drag/drop disabled.
+- Practice history saved on this device (History page).
+- No frameworks, packages, build tools, tracking or external services. Works locally and on GitHub Pages.
 
 ## Run locally
 
@@ -32,45 +33,32 @@ Then visit `http://localhost:8000`.
 
 ## Publish with GitHub Pages
 
-1. Create a new GitHub repository.
-2. Put the contents of this folder at the repository root.
-3. Commit and push to the `main` branch.
-4. In GitHub, open **Settings → Pages**.
-5. Under **Build and deployment**, choose **GitHub Actions**.
-6. The included workflow will deploy the site automatically after each push to `main`.
-
-The site uses only relative paths, so it works on both a user/organization Pages domain and a project Pages URL.
+The included workflow (`.github/workflows/pages.yml`) deploys the site after every push to `main` when **Settings -> Pages -> Build and deployment** is set to **GitHub Actions**. The site uses only relative paths.
 
 ## Repository layout
 
-- `index.html` — page markup
-- `styles.css` — presentation
-- `app.js` — timer, scrolling, input controls, and scoring
-- `letters.js` — 100-letter formal benchmark library
-- `trainer-passages.js` — 500 long, unique high-volume trainer passages
-- `.github/workflows/pages.yml` — GitHub Pages deployment
-- `.nojekyll` — tells GitHub Pages to serve the static files directly
+- `index.html` - page markup
+- `styles.css` - presentation
+- `app.js` - modes, timer, scrolling, input controls, scoring and results
+- `generator.js` - builds passages and headers from scenarios at each difficulty level
+- `scenarios.js` - the 80 passage scenarios
+- `history.html`, `history.js` - saved practice history
+- `tools/validate-scenarios.js` - checks every scenario (`node tools/validate-scenarios.js`)
+- `tools/SCENARIO_SPEC.md` - how to write a new scenario
+- `.github/workflows/pages.yml` - GitHub Pages deployment
+
+## Adding scenarios
+
+Add an object to `SCENARIOS` in `scenarios.js` following `tools/SCENARIO_SPEC.md`, then run `node tools/validate-scenarios.js`. New scenarios are picked up automatically at every difficulty level.
 
 ## Scoring note
 
-Gross WPM uses the conventional five-characters-per-word calculation over the five-minute test. Newline characters are excluded from WPM credit. Accuracy uses character-level edit distance against the corresponding source text. Trailing spaces at line or paragraph ends are ignored; meaningful spaces, punctuation, capitalization, omissions, insertions, substitutions, and paragraph structure still affect accuracy.
+Gross WPM uses the conventional five-characters-per-word calculation over the time typed (five minutes for a completed test). Newline characters are excluded from WPM credit. Accuracy uses character-level edit distance against the corresponding source text. Trailing spaces at line or paragraph ends are ignored; meaningful spaces, punctuation, capitalisation, omissions, insertions, substitutions and paragraph structure still affect accuracy.
 
 This is an independent practice simulator, not official CritiCall software. An employer's CritiCall configuration may use a different scoring method.
 
-
 ## Training records
 
-- `TRAINING_STATE.md` — current strengths, priorities, preferences, and study state
-- `TRAINING_LOG.md` — chronological benchmark scores and notable practice results
-- `CRITICALL_RULES.md` — stable practice rules and the Decision Making classification key
-
-## Long-passage rebuild (2026-09-15)
-
-- Formal mode: 100 unique letters, each intentionally longer than a normal five-minute attempt.
-- Trainer mode: 500 unique passages across nine categories; every passage is sized for a full five-minute run even when a shorter 2–4 minute trainer duration is selected.
-- Generation validation rejects duplicate full passages and duplicate substantive paragraphs.
-- Current library word-count range is recorded in `TRAINING_STATE.md`.
-
-
-## Trainer corpus refresh — 2026-09-16
-Trainer passages were rebuilt as 500 long, unique, predominantly plain-English samples. Each begins with one short addressee/address line, then shifts into natural prose or lightly operational narrative. Formal Test letters were intentionally left unchanged. All trainer passages exceed 470 words so a five-minute run cannot exhaust the source at expected practice speeds.
+- `TRAINING_STATE.md` - current strengths, priorities, preferences and study state
+- `TRAINING_LOG.md` - chronological benchmark scores and notable practice results
+- `CRITICALL_RULES.md` - stable practice rules and the Decision Making classification key
