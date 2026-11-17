@@ -14,3 +14,11 @@ Verified 2026-10-08 for the difficulty-level rebuild (headless Chromium + Node c
 - Error review compares only up to where typing stopped.
 - History page labels new runs (e.g. "5-Minute Test · Hard") and still shows runs saved by older versions.
 - Phone width (390px): no horizontal overflow.
+
+Verified 2026-11-17 for type-to-start (headless Chromium, 21 checks):
+
+- Typing box is focused on load, after New Passage, Try Again, and changing mode, level or timer setting.
+- Timer stays at 05:00 until the first keystroke; that keystroke starts the run and is kept.
+- Stop is disabled while waiting, ends the run early (INCOMPLETE), then becomes Try Again.
+- Typing is blocked after a run ends; Try Again or Ctrl/Cmd+Enter resets the same passage.
+- Header Practice also starts on the first keystroke and still auto-completes.

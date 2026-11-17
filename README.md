@@ -4,6 +4,7 @@ A dependency-free, CritiCall-style five-minute transcription test with selectabl
 
 ## Features
 
+- **Type to start.** The cursor is already in the typing box and the timer starts on your first keystroke. **Stop** ends a run early; **Try Again** restarts the same passage.
 - **Every test is five minutes.** Pass mark is fixed at **40 WPM and 95% accuracy**; both must be met, and a run stopped early is marked *Incomplete*.
 - **Four difficulty levels, plus Mixed:**
   - **Easy** - plain prose with a one-line "Dear ... at ..." opener (the same level as the original practice passages).

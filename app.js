@@ -205,18 +205,36 @@ function choosePassage() {
   rememberScenario(passage.scenarioId);
 
   sourceEl.textContent = currentText();
+  renderInfoStrip();
+  getReady();
+}
+
+// Puts the page in its waiting state for the current passage: typing box
+// empty, enabled and focused. The run (and the timer) starts on the first
+// keystroke, not on a button press.
+function getReady() {
+  if (running) return;
+  clearHeaderIdleTimer();
   sourceEl.scrollTop = 0;
   entryEl.value = '';
+  entryEl.disabled = false;
   resultsEl.classList.remove('show');
   passFailEl.className = 'verdict-badge';
   errorReviewEl.hidden = true;
   setAppState('idle');
   runSeconds = mode === 'header' ? 0 : TEST_SECONDS;
   renderTimerIdle();
-  renderInfoStrip();
+  startBtn.textContent = 'Stop';
+  startBtn.classList.remove('stop');
+  startBtn.disabled = true;
   statusEl.textContent = mode === 'header'
-    ? 'Choose Start when ready. Type the header exactly as shown.'
-    : 'Choose Start when ready. You will have five minutes.';
+    ? 'Start typing when ready. Type the header exactly as shown.'
+    : 'Start typing when ready. The five-minute timer begins with your first keystroke.';
+  focusEntry();
+}
+
+function focusEntry() {
+  if (!entryEl.disabled) entryEl.focus({ preventScroll: true });
 }
 
 // ---------- Scoring ----------
@@ -333,8 +351,9 @@ function endTest(reason = 'time') {
   entryEl.disabled = true;
   setControlsDisabled(false);
   setAppState('complete');
-  startBtn.textContent = 'Start';
+  startBtn.textContent = 'Try Again';
   startBtn.classList.remove('stop');
+  startBtn.disabled = false;
   showResults();
   timerEl.classList.remove('hidden');
   if (mode === 'header') {
@@ -358,7 +377,6 @@ function startTest() {
   endReason = null;
   startedAt = Date.now();
   remaining = runSeconds;
-  entryEl.value = '';
   entryEl.disabled = false;
   entryEl.focus();
   sourceEl.scrollTop = 0;
@@ -366,6 +384,7 @@ function startTest() {
   setAppState('running');
   startBtn.textContent = 'Stop';
   startBtn.classList.add('stop');
+  startBtn.disabled = false;
   resultsEl.classList.remove('show');
   statusEl.textContent = mode === 'header' ? 'Type the header exactly as shown.' : 'Test in progress.';
   renderTimerRunning();
@@ -458,12 +477,19 @@ entryEl.addEventListener('input', () => {
 });
 entryEl.addEventListener('paste', e => e.preventDefault());
 entryEl.addEventListener('drop', e => e.preventDefault());
-entryEl.addEventListener('beforeinput', e => { if (!running) e.preventDefault(); });
+entryEl.addEventListener('beforeinput', e => {
+  if (running) return;
+  if (appEl.dataset.state === 'idle') {
+    startTest(); // the keystroke itself goes through and counts
+  } else {
+    e.preventDefault();
+  }
+});
 startBtn.addEventListener('click', () => {
   if (running) {
     endTest('manual');
   } else {
-    startTest();
+    getReady(); // "Try Again": same passage, waiting for the first keystroke
   }
 });
 newBtn.addEventListener('click', choosePassage);
@@ -477,6 +503,7 @@ timerToggleBtn.addEventListener('click', () => {
   savePrefs();
   renderTimerToggle();
   if (running) renderTimerRunning();
+  focusEntry();
 });
 
 copyResultsBtn.addEventListener('click', async () => {
@@ -502,12 +529,12 @@ copyResultsBtn.addEventListener('click', async () => {
 });
 
 document.addEventListener('keydown', e => {
-  if (e.key === 'Enter' && (e.metaKey || e.ctrlKey) && !startBtn.disabled) {
+  if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) {
     e.preventDefault();
     if (running) {
       endTest('manual');
-    } else {
-      startTest();
+    } else if (appEl.dataset.state === 'complete') {
+      getReady();
     }
   }
 });
@@ -615,7 +642,6 @@ function trimToReached(typed, source) {
 
 // ---------- Initial state ----------
 
-entryEl.disabled = true;
 setControlsDisabled(false);
 renderLevelButtons();
 renderTimerToggle();
